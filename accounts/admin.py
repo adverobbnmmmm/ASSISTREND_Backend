@@ -6,7 +6,7 @@ from .models import UserAccount
 @admin.register(UserAccount)
 class CustomUserAdmin(UserAdmin):
     # Define the fields to display in the admin panel
-    list_display = ('email','id', 'name', 'phone','bio', 'age', 'photo', 'description','is_active', 'is_staff')
+    list_display = ('email', 'name', 'phone','bio', 'age', 'photo', 'description','is_active', 'is_staff')
 
     # Define the fields to filter by in the admin panel
     list_filter = ('is_active', 'is_staff')
@@ -22,7 +22,7 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email','id', 'name','phone','bio', 'age', 'photo', 'description', 'password1', 'password2', 'is_active', 'is_staff'),
+            'fields': ('email', 'name','phone','bio', 'age', 'photo', 'description', 'password1', 'password2', 'is_active', 'is_staff'),
         }),
     )
 
