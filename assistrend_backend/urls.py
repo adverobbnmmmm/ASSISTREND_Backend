@@ -31,5 +31,7 @@ urlpatterns = [
     path('api/account/', include('accounts.urls')),
     path('accounts/', include('allauth.urls')),
     path('auth/google/', GoogleLogin.as_view(), name='google_login'),
+    path('auth/', include('dj_rest_auth.urls')),
+    path('auth/social/', include('allauth.socialaccount.urls')),
 
 ]
