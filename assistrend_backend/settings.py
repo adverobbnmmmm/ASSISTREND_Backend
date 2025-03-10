@@ -65,6 +65,10 @@ INSTALLED_APPS = [
     # 'allauth.socialaccount.providers.facebook',
     # 'allauth.socialaccount.providers.instagram',
     # 'allauth.socialaccount.providers.linkedin',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+    'social_django',
+    'rest_framework.authtoken',  # <- Add this line
 ]
 
 MIDDLEWARE = [
@@ -219,6 +223,10 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 
+DJ_REST_AUTH = {
+    'TOKEN_MODEL': None,  # Disables token authentication
+}
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME':timedelta(minutes=120),
     'REFRESH_TOKEN_LIFETIME':timedelta(days=7),
@@ -270,15 +278,27 @@ CACHES = {
 AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',  # Enable allauth backend
     'django.contrib.auth.backends.ModelBackend',  # Default backend
+    'social_core.backends.google.GoogleOAuth2',
 )
 
 SOCIALACCOUNT_QUERY_EMAIL = True
+# SOCIALACCOUNT_PROVIDERS = {
+#     'google': {
+#         'SCOPE': ['email', 'profile'],
+#         'AUTH_PARAMS': {'access_type': 'online'},
+#     }
+# }
+
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'SCOPE': ['email', 'profile'],
-        'AUTH_PARAMS': {'access_type': 'online'},
+        'APP': {
+            'client_id': config('client_id'),
+            'secret': config('secret'),
+            'key': ''
+        }
     }
 }
+
 
 
 SITE_ID = 1
