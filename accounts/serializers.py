@@ -2,39 +2,25 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-# from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator
 import re
 
 User = get_user_model()
 
 
-def validate_password(value):
-    if len(value) < 8 or len(value) > 25:
-        raise serializers.ValidationError("Password must be between 8 and 25 characters long.")
-    if not re.search(r"[A-Z]", value):
-        raise serializers.ValidationError("Password must contain at least one uppercase letter.")
-    if not re.search(r"[a-z]", value):
-        raise serializers.ValidationError("Password must contain at least one lowercase letter.")
-    if not re.search(r"\d", value):
-        raise serializers.ValidationError("Password must contain at least one number.")
-    if not re.search(r"[@$!%*?&]", value):
-        raise serializers.ValidationError("Password must contain at least one special character (@$!%*?&).")
-    return value
 
 # User registration serializer (for creating a user with OTP verification)
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    # password = serializers.CharField(
-    #     write_only=True,
-    #     max_length=25,
-    #     validators=[
-    #         RegexValidator(
-    #             regex=r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,25}$',
-    #             message="Password must be 8-25 characters long, include at least one uppercase letter, one lowercase letter, one number, and one special character."
-    #         )
-    #     ]
-    # )
-
-    password = serializers.CharField(write_only=True, max_length=25, validators=[validate_password])
+    password = serializers.CharField(
+        write_only=True,
+        max_length=25,
+        validators=[
+            RegexValidator(
+                regex=r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,25}$',
+                message="Password must be 8-25 characters long, include at least one uppercase letter, one lowercase letter, one number, and one special character."
+            )
+        ]
+    )
 
     class Meta:
         model = User
