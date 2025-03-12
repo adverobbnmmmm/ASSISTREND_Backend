@@ -21,11 +21,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             )
         ]
     )
+    privacy_policy_accepted = serializers.BooleanField(write_only=True)
 
     class Meta:
         model = User
-        fields = [ 'name','email','phone', 'password',  'description']
+        fields = [ 'name','email','phone', 'password',  'description','privacy_policy_accepted']
         extra_kwargs = {'password': {'write_only': True}}
+
+    def validate_privacy_policy_accepted(self, value):
+        if not value:
+            raise serializers.ValidationError("You must accept the privacy policy to register.")
+        return value
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -59,7 +65,10 @@ class LoginSerializer(serializers.Serializer):
         # print("111111111111",user)
         if not user:
             raise serializers.ValidationError("Invalid credentials")
-
+        
+        if not user.privacy_policy_accepted:
+            raise serializers.ValidationError("You must accept the privacy policy before logging in.")
+        
         # Create JWT token
         refresh = RefreshToken.for_user(user)
         return {'refresh': str(refresh), 'access': str(refresh.access_token)}

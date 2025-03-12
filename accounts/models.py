@@ -36,6 +36,7 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_blocked = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+    privacy_policy_accepted = models.BooleanField(default=False)
 
     objects = UserAccountManager()
 
