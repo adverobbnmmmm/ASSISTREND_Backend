@@ -279,6 +279,10 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',  # Enable allauth backend
     'django.contrib.auth.backends.ModelBackend',  # Default backend
     'social_core.backends.google.GoogleOAuth2',
+    # 'social_core.backends.facebook.FacebookOAuth2',
+    # 'social_core.backends.instagram.InstagramOAuth2',
+    # 'social_core.backends.linkedin.LinkedinOAuth2',
+    # 'social_core.backends.twitter.TwitterOAuth',
 )
 
 SOCIALACCOUNT_QUERY_EMAIL = True
@@ -296,7 +300,31 @@ SOCIALACCOUNT_PROVIDERS = {
             'secret': config('secret'),
             'key': ''
         }
-    }
+    },
+    # 'facebook': {
+    #     'APP': {
+    #         'client_id': config('FACEBOOK_CLIENT_ID'),
+    #         'secret': config('FACEBOOK_SECRET'),
+    #     }
+    # },
+    # 'instagram': {
+    #     'APP': {
+    #         'client_id': config('INSTAGRAM_CLIENT_ID'),
+    #         'secret': config('INSTAGRAM_SECRET'),
+    #     }
+    # },
+    # 'linkedin': {
+    #     'APP': {
+    #         'client_id': config('LINKEDIN_CLIENT_ID'),
+    #         'secret': config('LINKEDIN_SECRET'),
+    #     }
+    # },
+    # 'twitter': {
+    #     'APP': {
+    #         'client_id': config('TWITTER_CLIENT_ID'),
+    #         'secret': config('TWITTER_SECRET'),
+    #     }
+    # }
 }
 
 
