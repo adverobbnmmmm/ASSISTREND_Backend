@@ -27,7 +27,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = [ 'name','email','phone', 'password',  'description','privacy_policy_accepted']
         extra_kwargs = {'password': {'write_only': True}}
-
     def validate_privacy_policy_accepted(self, value):
         if not value:
             raise serializers.ValidationError("You must accept the privacy policy to register.")
