@@ -7,6 +7,7 @@ or
 env\Scripts\activate
 
 # Install requirements
+navigate to service folder using command: cd service_folder_name
 pip install -r requirements.txt
 
 # Create .env files for env variables
