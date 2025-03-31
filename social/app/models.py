@@ -52,7 +52,7 @@ class Post(models.Model):
 
 class Engagement(models.Model):
     engagement_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    post_id = models.ForeignKey('Post', on_delete=models.CASCADE)
+    post = models.ForeignKey('Post', on_delete=models.CASCADE)
     user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
     type = models.CharField(
         max_length=10,
