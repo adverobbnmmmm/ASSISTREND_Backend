@@ -16,19 +16,21 @@ class RegisterView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        print("############## Request Data: ", request.data)
         serializer = UserRegistrationSerializer(data=request.data)
         print("#################serializer.is_valid()",serializer.is_valid())
         if serializer.is_valid():
-            user = serializer.save()
-            print("############# user",user.name,user.email,user.phone)
+            validated_data = serializer.validated_data
+            print("############# validated_data",validated_data["name"],validated_data["email"],validated_data["phone"])
             # Generate and send OTP
             otp = generateOtp()
-            sendOtpEmail(user.email, otp)
-            sendOtpSMS(user.phone, otp)
+            sendOtpEmail(validated_data["email"], otp)
+            sendOtpSMS(validated_data["phone"], otp)
             # Store OTP in cache (expires in 5 minutes)
-            cache.set(f"otp_{user.email}", otp, timeout=300)
-            cache.set(f"otp_{user.phone}", otp, timeout=300)
-            return Response({"message": "User created. Check your email for OTP."}, status=status.HTTP_201_CREATED)
+            cache.set(f"otp_{validated_data["email"]}", otp, timeout=300)
+            cache.set(f"otp_{validated_data["phone"]}", otp, timeout=300)
+            cache.set(f"user_data_{validated_data['email']}", validated_data, timeout=300)
+            return Response({"message": "Check your email or phone for OTP."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class OTPVerifyView(views.APIView):
@@ -42,14 +44,27 @@ class OTPVerifyView(views.APIView):
 
             # Retrieve OTP from cache
             cached_otp = cache.get(f"otp_{email}")
+            cached_user_data = cache.get(f"user_data_{email}")
 
             if cached_otp is None:
                 return Response({"message": "OTP expired."}, status=status.HTTP_400_BAD_REQUEST)
             if cached_otp != otpCode:
                 return Response({"message": "OTP not matching!"}, status=status.HTTP_400_BAD_REQUEST)
-            if cached_otp and cached_otp == otpCode:
+            if cached_user_data and cached_otp == otpCode:
                 cache.delete(f"otp_{email}")  # Remove OTP after successful verification
-                return Response({"message": "OTP verified!"}, status=status.HTTP_200_OK)
+                cache.delete(f"user_data_{email}")
+                # Save the user data to the database
+                user = UserAccount.objects.create(
+                    name=cached_user_data['name'],
+                    email=cached_user_data['email'],
+                    phone=cached_user_data['phone'],
+                    description=cached_user_data.get('description', '')
+                )
+                
+                user.set_password(cached_user_data['password'])
+                user.privacy_policy_accepted = cached_user_data['privacy_policy_accepted']
+                user.save()
+                return Response({"message": "OTP verified!,Account creation successful"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(views.APIView):
