@@ -340,3 +340,9 @@ ACCOUNT_LOGOUT_REDIRECT_URL = '/'  # Redirect after logout
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Explicitly tell allauth there's no username
 ACCOUNT_USERNAME_REQUIRED = False  # Disable username field
+
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+]
