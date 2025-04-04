@@ -6,7 +6,7 @@ from .models import UserAccount
 @admin.register(UserAccount)
 class CustomUserAdmin(UserAdmin):
     # Define the fields to display in the admin panel
-    list_display = ('email','id', 'name', 'phone','bio', 'age', 'photo', 'description','is_active', 'is_staff')
+    list_display = ('id','email', 'name', 'phone','bio','dob','gender','profilepicture', 'description','aim','interest','privacy_policy_accepted','is_active', 'is_staff','is_blocked')
 
     # Define the fields to filter by in the admin panel
     list_filter = ('is_active', 'is_staff')
@@ -14,7 +14,7 @@ class CustomUserAdmin(UserAdmin):
     # Define the fieldsets for the add and change forms in the admin panel
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal Info', {'fields': ('name', 'phone','bio', 'age', 'photo', 'description',)}),
+        ('Personal Info', {'fields': ('name', 'phone','bio','dob','gender','profilepicture', 'description','aim','interest','privacy_policy_accepted')}),
         ('Permissions', {'fields': ('is_active', 'is_staff')}),
     )
 
@@ -22,7 +22,7 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email','id', 'name','phone','bio', 'age', 'photo', 'description', 'password1', 'password2', 'is_active', 'is_staff'),
+            'fields': ('email', 'name','phone','bio','dob','gender','profilepicture', 'description','aim','interest','privacy_policy_accepted', 'password1', 'password2', 'is_active', 'is_staff'),
         }),
     )
 
