@@ -214,7 +214,7 @@ CORS_ALLOW_HEADERS = [
     'Authorization',
 ]
 
-AUTH_USER_MODEL = 'accounts.UserAccount'
+AUTH_USER_MODEL = 'app.UserAccount'
 
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
@@ -319,7 +319,7 @@ SOCIALACCOUNT_PROVIDERS = {
     #         'client_id': config('LINKEDIN_CLIENT_ID'),
     #         'secret': config('LINKEDIN_SECRET'),
     #     }
-    # },
+    # },••••••
     # 'twitter': {
     #     'APP': {
     #         'client_id': config('TWITTER_CLIENT_ID'),
@@ -332,7 +332,8 @@ SOCIALACCOUNT_PROVIDERS = {
 
 SITE_ID = 1
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+# ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_EMAIL_REQUIRED = True
 
 LOGIN_REDIRECT_URL = '/'  # Redirect after login
