@@ -19,9 +19,21 @@ from django.urls import path,include
 from rest_framework_simplejwt import views as jwt_views
 from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
+from allauth.socialaccount.providers.instagram.views import InstagramOAuth2Adapter
+from allauth.socialaccount.providers.linkedin_oauth2.views import LinkedInOAuth2Adapter
+
+class LinkedInLogin(SocialLoginView):
+    adapter_class = LinkedInOAuth2Adapter
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
+
+class FacebookLogin(SocialLoginView):
+    adapter_class = FacebookOAuth2Adapter
+
+class InstagramLogin(SocialLoginView):
+    adapter_class = InstagramOAuth2Adapter
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -31,6 +43,9 @@ urlpatterns = [
     path('api/account/', include('accounts.urls')),
     path('accounts/', include('allauth.urls')),
     path('auth/google/', GoogleLogin.as_view(), name='google_login'),
+    path('auth/facebook/', FacebookLogin.as_view(), name='facebook_login'),
+    path('auth/instagram/', InstagramLogin.as_view(), name='instagram_login'),
+    path('auth/linkedin/', LinkedInLogin.as_view(), name='linkedin_login'),
     path('auth/', include('dj_rest_auth.urls')),
     path('auth/social/', include('allauth.socialaccount.urls')),
 

@@ -295,13 +295,38 @@ SOCIALACCOUNT_QUERY_EMAIL = True
 # }
 
 SOCIALACCOUNT_PROVIDERS = {
-    'google': {
+     'google': {
         'APP': {
-            'client_id': config('client_id'),
-            'secret': config('secret'),
+            'client_id': config('CLIENT_ID', default=''),
+            'secret': config('SECRET', default=''),
             'key': ''
         }
     },
+    'facebook': {
+        'APP': {
+            'client_id': config('FACEBOOK_CLIENT_ID', default=''),  #fake id
+            'secret': config('FACEBOOK_SECRET', default='fake-secret-key'),  #fake id
+        }
+    },
+    'instagram': {
+        'APP': {
+            'client_id': config('INSTAGRAM_CLIENT_ID',default=""), #fake id
+            'secret': config('INSTAGRAM_SECRET',default=""), #fake id
+        }
+    },
+    'linkedin': {
+        'APP': {
+            'client_id': config('LINKEDIN_CLIENT_ID',default=""), #fake id
+            'secret': config('LINKEDIN_SECRET',default=""), #fake id
+        }
+    }
+    # 'google': {
+    #     'APP': {
+    #         'client_id': config('client_id'),
+    #         'secret': config('secret'),
+    #         'key': ''
+    #     }
+    # },
     # 'facebook': {
     #     'APP': {
     #         'client_id': config('FACEBOOK_CLIENT_ID'),
