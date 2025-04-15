@@ -4,8 +4,8 @@ from django.db import models
 
 class Connect(models.Model):
     connect_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user_id = models.UUIDField()
-    initiator_user_id = models.UUIDField()
+    user_id = models.UUIDField() # Refers to user from accounts_service
+    initiator_user_id = models.UUIDField() # Refers to user from accounts_service
     connection_status = models.CharField(
         max_length=10,
         choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')],
@@ -15,8 +15,8 @@ class Connect(models.Model):
 
 class Friend(models.Model):
     friend_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user_id = models.UUIDField()
-    friend_user_id = models.UUIDField()
+    user_id = models.UUIDField() # Refers to user from accounts_service
+    friend_user_id = models.UUIDField() # Refers to user from accounts_service
     accepted = models.BooleanField(default=False)
     requested = models.BooleanField(default=True)
     friendship_timestamp = models.DateTimeField(auto_now_add=True)
@@ -26,7 +26,7 @@ class Friend(models.Model):
 
 class Post(models.Model):
     post_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user_id = models.UUIDField()
+    user_id = models.UUIDField() # Refers to user from accounts_service
     privacy_setting = models.CharField(
         max_length=15,
         choices=[('public', 'Public'), ('private', 'Private'), ('friends_only', 'Friends Only')]
@@ -42,7 +42,7 @@ class Post(models.Model):
 class Engagement(models.Model):
     engagement_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
-    user_id = models.UUIDField()
+    user_id = models.UUIDField() # Refers to user from accounts_service
     type = models.CharField(
         max_length=10,
         choices=[('like', 'Like'), ('love', 'Love')]
@@ -51,7 +51,7 @@ class Engagement(models.Model):
 
 class Status(models.Model):
     status_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user_id = models.UUIDField()
+    user_id = models.UUIDField() # Refers to user from accounts_service
     title = models.CharField(max_length=255)
     badge = models.CharField(max_length=255, blank=True, null=True)
     point = models.IntegerField(default=0)
