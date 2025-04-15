@@ -62,7 +62,19 @@
             ],
             "django": true,
             "autoStartBrowser": false,
-            "program": "${workspaceFolder}/social/manage.py"
+            "program": "${workspaceFolder}/social_service/manage.py"
+        },
+        {
+            "name": "Notification Django Service",
+            "type": "debugpy",
+            "request": "launch",
+            "args": [
+                "runserver",
+                "8006"
+            ],
+            "django": true,
+            "autoStartBrowser": false,
+            "program": "${workspaceFolder}/notification_service/manage.py"
         },
     ]
 }
