@@ -26,7 +26,7 @@
             ],
             "django": true,
             "autoStartBrowser": false,
-            "program": "${workspaceFolder}/challenges/manage.py"
+            "program": "${workspaceFolder}/challenge_service/manage.py"
         },
         {
             "name": "Messaging Django Service",
@@ -50,7 +50,7 @@
             ],
             "django": true,
             "autoStartBrowser": false,
-            "program": "${workspaceFolder}/moderation/manage.py"
+            "program": "${workspaceFolder}/moderation_service/manage.py"
         },
         {
             "name": "Social Django Service",
