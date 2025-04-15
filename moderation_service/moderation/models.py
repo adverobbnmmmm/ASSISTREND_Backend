@@ -4,7 +4,7 @@ import uuid
 
 class Moderator(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.UUIDField() # Refers to user from accounts_service
+    user_id = models.UUIDField() # Refers to user from accounts_service
     privacy_policy = models.JSONField()
     reports = models.JSONField()
     block = models.BooleanField(default=False)
@@ -12,7 +12,7 @@ class Moderator(models.Model):
 
 class Perk(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.UUIDField() # Refers to user from accounts_service
+    user_id = models.UUIDField() # Refers to user from accounts_service
     name = models.CharField(max_length=255)
     description = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
