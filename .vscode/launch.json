@@ -38,7 +38,7 @@
             ],
             "django": true,
             "autoStartBrowser": false,
-            "program": "${workspaceFolder}/messaging/manage.py"
+            "program": "${workspaceFolder}/message_service/manage.py"
         },
         {
             "name": "Moderation Django Service",
