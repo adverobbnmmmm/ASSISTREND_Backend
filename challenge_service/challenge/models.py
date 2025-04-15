@@ -1,10 +1,10 @@
+# challenge/models.py
+import uuid
 from django.db import models
 
-import uuid
-
 class Challenge(models.Model):
-    challenge_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_id = models.UUIDField()  # Refers to user from accounts_service
     title = models.CharField(max_length=255)
     description = models.TextField()
     start_date = models.DateField()
@@ -15,8 +15,8 @@ class Challenge(models.Model):
     )
 
 class ChallengeTrack(models.Model):
-    track_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_id = models.UUIDField() # Refers to user from accounts_service
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
     progress = models.JSONField(blank=True, null=True)
     completion_status = models.CharField(
@@ -26,8 +26,8 @@ class ChallengeTrack(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
 class Leaderboard(models.Model):
-    leaderboard_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user_id = models.UUIDField() # Refers to user from accounts_service
     name = models.CharField(max_length=255)
     badge = models.CharField(max_length=255, blank=True, null=True)
     point = models.IntegerField(default=0)
