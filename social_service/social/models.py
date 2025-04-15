@@ -3,7 +3,7 @@ import uuid
 from django.db import models
 
 class Connect(models.Model):
-    connect_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = models.UUIDField() # Refers to user from accounts_service
     initiator_user_id = models.UUIDField() # Refers to user from accounts_service
     connection_status = models.CharField(
@@ -14,7 +14,7 @@ class Connect(models.Model):
     connection_timestamp = models.DateTimeField(auto_now_add=True)
 
 class Friend(models.Model):
-    friend_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = models.UUIDField() # Refers to user from accounts_service
     friend_user_id = models.UUIDField() # Refers to user from accounts_service
     accepted = models.BooleanField(default=False)
@@ -25,7 +25,7 @@ class Friend(models.Model):
         unique_together = [['user_id', 'friend_user_id']]
 
 class Post(models.Model):
-    post_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = models.UUIDField() # Refers to user from accounts_service
     privacy_setting = models.CharField(
         max_length=15,
@@ -40,7 +40,7 @@ class Post(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
 class Engagement(models.Model):
-    engagement_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     user_id = models.UUIDField() # Refers to user from accounts_service
     type = models.CharField(
@@ -50,7 +50,7 @@ class Engagement(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
 class Status(models.Model):
-    status_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = models.UUIDField() # Refers to user from accounts_service
     title = models.CharField(max_length=255)
     badge = models.CharField(max_length=255, blank=True, null=True)
