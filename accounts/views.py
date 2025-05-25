@@ -99,3 +99,149 @@ class UserProfileView(views.APIView):
         serializer = UserDetailSerializer(request.user)
         return Response(serializer.data)
 
+class ProfilePictureUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def patch(self, request):
+        try:
+            image_base64 = request.data.get('profile_image')
+            image_name = request.data.get('profile_image_name', 'profile_pic')
+            if not image_base64:
+                return Response({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
+            if 'base64,' in image_base64:
+                image_base64 = image_base64.split('base64,')[1]
+            image_data = base64.b64decode(image_base64)
+            image_file = ContentFile(image_data, name=f"{image_name}.jpg")
+            user = request.user
+            user.profilepicture = image_file
+            user.save()
+            serializer = UserAccountSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserDetailView(generics.RetrieveAPIView):
+    serializer_class = UserAccountSerializer
+    permission_classes = [IsAuthenticated]
+    def get_object(self):
+        return self.request.user
+
+
+class UserAccountUpdateView(generics.RetrieveUpdateAPIView):
+    queryset = UserAccount.objects.all()
+    serializer_class = UserAccountSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user  # Returns current authenticated user
+
+    def patch(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProfileDetailUpdateView(generics.RetrieveUpdateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return Profile.objects.get(user=self.request.user)
+
+class PublicProfilesListView(generics.ListAPIView):
+    queryset = Profile.objects.filter(show_activity=True, highlights_visibility='public')
+    serializer_class = ProfileSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class FriendListView(generics.ListAPIView):
+    serializer_class = FriendSerializer
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        return Friend.objects.filter(user=self.request.user)
+
+
+class AddFriendView(generics.CreateAPIView):
+    serializer_class = FriendSerializer
+    permission_classes = [IsAuthenticated]
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class RemoveFriendView(APIView):
+    permission_classes = [IsAuthenticated]
+    def delete(self, request, friend_id):
+        try:
+            friendship = Friend.objects.get(user=request.user, friend_id=friend_id)
+            friendship.delete()
+            return Response({"message": "Friend removed."}, status=status.HTTP_204_NO_CONTENT)
+        except Friend.DoesNotExist:
+            return Response({"error": "Friend not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ToggleBlockFriendView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, friend_id):
+        try:
+            friend = Friend.objects.get(user=request.user, friend_id=friend_id)
+            friend.is_blocked = not friend.is_blocked
+            friend.save()
+            return Response({"blocked": friend.is_blocked})
+        except Friend.DoesNotExist:
+            return Response({"error": "Friend not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class UserWithProfileView(generics.RetrieveAPIView):
+    serializer_class = UserWithProfileSerializer
+    permission_classes = [IsAuthenticated]
+    def get_object(self):
+        return self.request.user
+
+
+class HighlightView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        profile = Profile.objects.get(user=request.user)
+        return Response({"highlights": profile.highlights})
+
+    def put(self, request):
+        profile = Profile.objects.get(user=request.user)
+        highlights = request.data.get("highlights", "")
+        profile.highlights = highlights
+        profile.save()
+        return Response({"message": "Highlights updated", "highlights": profile.highlights})
+
+
+class ToggleHighlightVisibilityView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        profile = Profile.objects.get(user=request.user)
+        visibility = request.data.get("visibility", "").lower()
+        if visibility not in ["public", "private"]:
+            return Response({"error": "Invalid visibility option"}, status=400)
+        profile.highlights_visibility = visibility
+        profile.save()
+        return Response({"message": f"Highlight visibility set to {visibility}"})
+
+
+class ThemeLayoutCustomizationView(APIView):
+    permission_classes = [IsAuthenticated]
+    def put(self, request):
+        profile = Profile.objects.get(user=request.user)
+        theme = request.data.get("theme")
+        layout = request.data.get("layout")
+        if theme:
+            profile.theme = theme
+        if layout:
+            profile.layout = layout
+
+        profile.save()
+        return Response({
+            "message": "Theme and layout updated",
+            "theme": profile.theme,
+            "layout": profile.layout
+        })

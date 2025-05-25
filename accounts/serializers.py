@@ -71,3 +71,49 @@ class LoginSerializer(serializers.Serializer):
         # Create JWT token
         refresh = RefreshToken.for_user(user)
         return {'refresh': str(refresh), 'access': str(refresh.access_token)}
+
+
+class UserAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserAccount
+        fields = [
+            'id', 'name', 'email', 'phone', 'bio', 'dob', 'gender', 'profilepicture',
+            'description', 'interest', 'aim', 'location', 'is_active', 'is_blocked',
+            'last_updated_timestamp', 'last_login_timestamp'
+        ]
+        read_only_fields = ['is_active', 'is_blocked', 'last_updated_timestamp', 'last_login_timestamp']
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    user = UserAccountSerializer(read_only=True)
+    class Meta:
+        model = Profile
+        fields = [
+            'id', 'user', 'bio', 'profile_pic', 'theme', 'layout',
+            'highlights', 'highlights_visibility', 'show_activity'
+        ]
+        read_only_fields = ['user']
+
+
+class FriendSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(queryset=UserAccount.objects.all())
+    friend = serializers.PrimaryKeyRelatedField(queryset=UserAccount.objects.all())
+    class Meta:
+        model = Friend
+        fields = ['id', 'user', 'friend', 'is_blocked']
+
+
+class SocialLoginSerializer(serializers.ModelSerializer):
+    user = UserAccountSerializer(read_only=True)
+    class Meta:
+        model = SocialLogin
+        fields = ['social_id', 'user', 'provider', 'provider_user_id', 'last_updated_timestamp']
+        read_only_fields = ['last_updated_timestamp']
+
+
+class UserWithProfileSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer(read_only=True)
+
+    class Meta:
+        model = UserAccount
+        fields = ['id', 'name', 'email', 'profile']

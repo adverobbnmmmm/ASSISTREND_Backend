@@ -73,5 +73,31 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 
+def profile_image_upload(instance, filename):
+    return f'profile_pics/{instance.user.email}/{filename}'
 
+class Profile(models.Model):
+    user = models.OneToOneField(UserAccount, on_delete=models.CASCADE, related_name="profile")
+    bio = models.TextField(blank=True)
+    profile_pic = models.ImageField(upload_to=profile_image_upload, blank=True, null=True)
+    theme = models.CharField(max_length=50, default='light')  
+    layout = models.CharField(max_length=50, default='default') 
+    highlights = models.JSONField(default=dict, blank=True, null=True)
+    highlights_visibility = models.CharField(
+        max_length=10,
+        choices=[('public', 'Public'), ('private', 'Private')],
+        default='private'
+    )
+    show_activity = models.BooleanField(default=True)
+    def __str__(self):
+        return f"{self.user.email}'s Profile"
+
+class Friend(models.Model):
+    user = models.ForeignKey(UserAccount, related_name='owner', on_delete=models.CASCADE)
+    friend = models.ForeignKey(UserAccount, related_name='friends', on_delete=models.CASCADE)
+    is_blocked = models.BooleanField(default=False)
+    class Meta:
+        unique_together = ('user', 'friend')
+    def __str__(self):
+        return f"{self.user.email} → {self.friend.email} ({'Blocked' if self.is_blocked else 'Active'})"
 
