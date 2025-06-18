@@ -73,5 +73,30 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 
+class Profile(models.Model):
+    userId= models.OneToOneField(UserAccount, on_delete=models.CASCADE, related_name='profile')
+    userName = models.CharField(max_length=255, blank=False, null=False)
+    emoji=models.CharField(max_length=100, blank=True, null=True)
+    about=models.TextField(blank=True, null=True)
+    points = models.IntegerField(default=0)
+    isPrivate = models.BooleanField(default=False)
+    profileImageUrl = models.URLField(blank=True, null=True)
+    location = models.CharField(max_length=255, blank=True, null=True)  
+    dob= models.DateField(blank=True, null=True)
+    gender= models.CharField(max_length=20, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], blank=True, null=True)
+
+
+
+
+class Interest(models.Model):
+    interestName=models.CharField(max_length=255, blank=False, null=False)
+    
+class UserInterest(models.Model):
+    userId = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name='user_interests')
+    interestId = models.ForeignKey(Interest, on_delete=models.CASCADE, related_name='user_interests')
+    
+    class Meta:
+        unique_together = ('userId', 'interestId')  
+
 
 
