@@ -27,6 +27,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Migration bypass has been removed after successful migrations
+# MIGRATION_MODULES = {
+#     'admin': None,
+#     'auth': None,
+#     'contenttypes': None,
+#     'sessions': None,
+# }
+
 
 # Application definition
 
@@ -129,3 +137,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Use the custom user model instead of Django's default
+# Removed custom user model setting since we're using a regular model
+# AUTH_USER_MODEL = 'features.UserAccount'
