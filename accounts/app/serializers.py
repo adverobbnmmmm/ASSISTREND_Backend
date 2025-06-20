@@ -70,4 +70,6 @@ class LoginSerializer(serializers.Serializer):
         
         # Create JWT token
         refresh = RefreshToken.for_user(user)
-        return {'refresh': str(refresh), 'access': str(refresh.access_token)}
+        return {'refresh': str(refresh), 'access': str(refresh.access_token),
+                'userId': user.id,
+                }
