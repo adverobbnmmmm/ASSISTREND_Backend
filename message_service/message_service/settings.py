@@ -32,6 +32,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,6 +43,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'message',
+    'daphne' #Daphne ASI server for handling WebSockets
 ]
 
 MIDDLEWARE = [
@@ -72,6 +75,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'message_service.wsgi.application'
+ASGI_APPLICATION = 'message_service.asgi.application'
 
 
 # Database
@@ -108,6 +112,13 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'message.auth.ExternalJWTAuthentication', 
+    ],
+}
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -129,3 +140,16 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+SECRET_KEY = config('SECRET_KEY')
+ALGORITHM = config('ALGORITHM')
+
+CHANNEL_LAYERS = {
+    "default":{
+        "BACKEND":"channels_redis.core.RedisChannelLayer",
+        "CONFIG":{
+            "hosts":[("127.0.0.1",6379)],
+        },
+    },
+}
