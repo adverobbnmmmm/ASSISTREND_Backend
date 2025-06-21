@@ -30,6 +30,23 @@ class UserAccount(models.Model):
     def __str__(self):
         return self.email
 
+class UserInterest(models.Model):
+    userId = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
+    interestId =  models.ForeignKey('Interest', on_delete=models.CASCADE)
+
+    class Meta:
+        managed = False  # Tell Django not to manage this table
+        db_table = 'app_userinterest'  # Specify the exact table name in the database
+
+
+class Interest(models.Model):
+    interestName=models.CharField(max_length=255, blank=False, null=False)
+    
+    
+    class Meta:
+        managed = False
+        db_table = 'app_interest'  # Specify the exact table name in the database
+        
 class Profile(models.Model):
     userId= models.OneToOneField(UserAccount, on_delete=models.CASCADE, related_name='profile')
     userName = models.CharField(max_length=255, blank=False, null=False)
