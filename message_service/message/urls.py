@@ -1,11 +1,6 @@
-# social/urls.py
-from rest_framework.routers import DefaultRouter
-from .views import Message1to1ViewSet, MessageGroupViewSet
-
-router = DefaultRouter()
-router.register(r'message-group', MessageGroupViewSet)
-router.register(r'message-one-to-one', Message1to1ViewSet)
+from django.urls import path
+from .views import RequestSocketSession
 
 urlpatterns = [
-    
-] + router.urls
+    path('api/socket-session',RequestSocketSession.as_view(),name='request_socket_session'),
+]

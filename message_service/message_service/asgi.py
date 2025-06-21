@@ -8,9 +8,14 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 """
 
 import os
-
+from channels.routing import ProtocolTypeRouter,URLRouter
 from django.core.asgi import get_asgi_application
+from message.routing import websocket_urlpatterns #our websocket routes
+from message.middleware import WebSocketSessionTokenAuthMiddleware
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'message_service.settings')
 
-application = get_asgi_application()
+application = ProtocolTypeRouter({#tells how to route different type of connections
+    "http":get_asgi_application(),
+    "websocket":WebSocketSessionTokenAuthMiddleware(URLRouter(websocket_urlpatterns)),
+})
