@@ -118,7 +118,6 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
             'sender_id': event['sender_id']
         }))
 
-        await self.mark_message_delivered(event['message_id'])
 
     @database_sync_to_async
     def save_message(self, message, image_url):
@@ -135,11 +134,3 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
             message=message,
             image=image_url  # Can be a URL or empty
         )
-    
-    @database_sync_to_async
-    def mark_message_delivered(self, message_id):
-        try:
-            message = GroupMessage.objects.get(id=message_id)
-            message.delivered_to.add(self.user)  # Mark that *this user* received it
-        except GroupMessage.DoesNotExist:
-            pass
