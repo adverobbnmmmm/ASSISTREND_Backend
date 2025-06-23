@@ -41,7 +41,7 @@ class UserAccount(models.Model):
 # ===========================
 # Contains shared fields like sender, message text, image, timestamp
 class BaseMessage(models.Model):
-    sender = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name='sent_messages')  # Who sent the message
+    sender = models.ForeignKey(UserAccount, on_delete=models.CASCADE)  # Who sent the message
     message = models.TextField(blank=True, null=True)  # Optional text message
     image = models.ImageField(upload_to="chat_images/", blank=True, null=True)  # Optional image
     sent_time = models.DateTimeField(default=timezone.now)  # Timestamp of when the message was sent
@@ -55,12 +55,20 @@ class BaseMessage(models.Model):
 # ===================================
 # Each message goes from one user to another
 class OneToOneMessage(BaseMessage):
+    sender = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name='sent_one_to_one')
     receiver = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name='received_one_to_one')  # Receiver of the message
     sent_to_receiver = models.BooleanField(default=False)  # Marks whether receiver has received/read the message
 
     def is_ready_to_delete(self):
         # If the message has been delivered, we can safely delete it in cleanup tasks
         return self.sent_to_receiver
+    
+    class Meta:#indexing tables in database make lookup fast.
+        indexes = [
+            models.Index(fields=['receiver']),
+            models.Index(fields=['sent_to_receiver']),
+            models.Index(fields=['receiver', 'sent_to_receiver']),  # compound index for fast lookup of undelivered msgs
+        ]
 
 
 # =====================
@@ -75,6 +83,19 @@ class ChatGroup(models.Model):
 
     def __str__(self):
         return self.group_name
+    
+
+#To index the joined table of messageid and user
+class MessageDelivery(models.Model):
+    message = models.ForeignKey("GroupMessage", on_delete=models.CASCADE)
+    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["message"]),
+            models.Index(fields=["user"]),
+        ]
+        unique_together = ("message", "user")  # Prevents duplicate delivery entries
 
 
 # ===================
@@ -82,8 +103,14 @@ class ChatGroup(models.Model):
 # ===================
 # Represents a message sent to a group
 class GroupMessage(BaseMessage):
+    sender = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name='sent_group_messages')
     group = models.ForeignKey(ChatGroup, on_delete=models.CASCADE, related_name='messages')  # Which group this message belongs to
-    delivered_to = models.ManyToManyField(UserAccount, related_name='delivered_group_messages', blank=True)
+    delivered_to = models.ManyToManyField(
+        UserAccount,
+        through='MessageDelivery',
+        related_name='delivered_group_messages',
+        blank=True
+    )    
     # Keeps track of which users have received this message
 
     def is_ready_to_delete(self):
