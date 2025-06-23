@@ -23,11 +23,17 @@ class FriendChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
+
+        #Handle acknowledgements
+        if data.get('type') == 'acknowledge':
+            await self.handle_acknowledgement(data['message_id'])
+            return
+        
         message = data.get('message', '')
         image_url = data.get('image', None)  # base64 or direct image URL
 
         # Save the message to DB
-        await self.save_message(message, image_url)
+        message_id = await self.save_message(message, image_url)
 
         # Send it to the other user
         await self.channel_layer.group_send(
@@ -36,7 +42,8 @@ class FriendChatConsumer(AsyncWebsocketConsumer):
                 'type': 'chat.message',
                 'message': message,
                 'image': image_url,
-                'sender_id': self.user.id
+                'sender_id': self.user.id,
+                'message_id':message_id
             }
         )
 
@@ -44,21 +51,31 @@ class FriendChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'message': event['message'],
             'image': event.get('image'),  # Include image data in the response
-            'sender_id': event['sender_id']
+            'sender_id': event['sender_id'],
+            'message_id':event['message_id']
         }))
 
 
     @database_sync_to_async
     def save_message(self, message, image_url):
         friend = UserAccount.objects.get(id=self.friend_id)
-
         # Store the message with optional image
-        OneToOneMessage.objects.create(
+        message_object = OneToOneMessage.objects.create(
             sender=self.user,
             receiver=friend,
             message=message,
             image=image_url  # model's `image` field will accept image URL
         )
+        return message_object.id
+    
+    @database_sync_to_async
+    def handle_acknowledgement(self,message_id):
+        try:
+            msg = OneToOneMessage.objects.get(id=message_id,receiver=self.user)
+            msg.sent_to_receiver = True
+            msg.save()
+        except OneToOneMessage.DoesNotExist:
+            pass
 
 
 # ========================
@@ -90,11 +107,17 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         Parses the data, saves it to the database, and broadcasts it to the group.
         """
         data = json.loads(text_data)
+
+        #handle acknowledgement for a message
+        if data.get("type") == 'acknowledge':
+            await self.handle_acknowledgement(data['message_id'])
+            return
+        
         message = data.get('message', '')
         image_url = data.get('image', None)  # Optional image (URL or base64)
 
         # Save the message to the database
-        await self.save_message(message, image_url)
+        message_id = await self.save_message(message, image_url)
 
         # Broadcast message to the Redis group so all members get it
         await self.channel_layer.group_send(
@@ -103,7 +126,8 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
                 'type': 'group.message',  # Handler to call: group_message()
                 'message': message,
                 'image': image_url,
-                'sender_id': self.user.id
+                'sender_id': self.user.id,
+                'message_id':message_id
             }
         )
 
@@ -115,7 +139,8 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'message': event['message'],
             'image': event.get('image'),
-            'sender_id': event['sender_id']
+            'sender_id': event['sender_id'],
+            'message_id': event['message_id']
         }))
 
 
@@ -134,3 +159,13 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
             message=message,
             image=image_url  # Can be a URL or empty
         )
+        return msg.id
+    
+    @database_sync_to_async
+    def handle_acknowledgement(self,message_id):
+        try:
+            msg = GroupMessage.objects.get(id=message_id)
+            msg.delivered_to.add(self.user)
+        except GroupMessage.DoesNotExist:
+            pass
+    

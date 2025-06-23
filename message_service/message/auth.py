@@ -1,12 +1,11 @@
 #This is to authenticate the already existing JWT Tokens coming in for Socket creation requests.
 # Also we will plug this custom class into DEFAULT_AUTHENTICATION_CLASSES, so that
-
 import jwt #PyJWT library for decoding the JWT
 from django.conf import settings #To get the shared secret from settings.
 from django.contrib.auth.models import AnonymousUser,User
 from rest_framework.authentication import BaseAuthentication #Base class for custom authentication
 from rest_framework.exceptions import AuthenticationFailed #Used t throw 401
-from utils.functions import get_user_details
+from .functions import get_user_details
 
 
 
@@ -43,18 +42,17 @@ class ExternalJWTAuthentication(BaseAuthentication):#custom class for authentica
         if not user_id:
             raise AuthenticationFailed('Token payload missing user_id')
         
-        #4. Retrieve or create Django user
+        # 4. Retrieve user from shared DB
         user_info = get_user_details(user_id)
-        if not user_id:
-            raise AuthenticationFailed('Unable to fetch user details from accounts service')
-        
+        if not user_info:
+            raise AuthenticationFailed('Unable to fetch user details from shared user DB')
 
-        #5. Create and return a user object.
+        # 5. Create and return a pseudo user object
         user = type('RemoteUser', (), {
-            'id':user_info.get('id'),
+            'id': user_info.get('id'),
             'username': user_info.get('username'),
-            'email':user_info.get('email'),
-            'is_authenticated':True
+            'email': user_info.get('email'),
+            'is_authenticated': True
         })()
 
         return (user,token)
