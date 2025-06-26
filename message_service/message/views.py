@@ -1,5 +1,9 @@
 # social/views.py
 
+from rest_framework.generics import ListAPIView
+from rest_framework import status
+from .serializers import UserAccountSerializer
+from .pagination import SearchScrollPagination
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -176,3 +180,35 @@ class PendingFriendRequests(APIView):
             for fr in pending
         ]
         return Response(data, status=200)
+
+class UserSearchView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserAccountSerializer
+    pagination_class = SearchScrollPagination  # only for this view
+
+    def get_queryset(self):
+        query = self.request.GET.get('query', '').strip()
+        if not query:
+            # Empty query, return empty queryset, no need to send full DB
+            return UserAccount.objects.none()
+        
+        # Only return results matching name or email
+        return UserAccount.objects.filter(
+            Q(name__icontains=query) |
+            Q(email__icontains=query)
+        ).order_by('name')
+
+    def list(self, request, *args, **kwargs):
+        """
+        Override the default list() to return 204 if no results
+        """
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            if not page:
+                return Response({"detail": "No users found."}, status=status.HTTP_204_NO_CONTENT)
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        # Should not reach here
+        return Response({"detail": "Unexpected error."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

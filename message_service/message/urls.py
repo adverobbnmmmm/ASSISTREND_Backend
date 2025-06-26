@@ -4,7 +4,8 @@ from .views import(
     GetMissedChats,
     SendFriendRequest,
     RespondToFriendRequest,
-    PendingFriendRequests
+    PendingFriendRequests,
+    UserSearchView
 )
 
 urlpatterns = [
@@ -16,5 +17,5 @@ urlpatterns = [
     path('api/friends/respond/', RespondToFriendRequest.as_view(), name='respond_to_friend_request'),
     # Get list of pending friend requests for the logged-in user (GET)
     path('api/friends/pending/', PendingFriendRequests.as_view(), name='pending_friend_requests'),
-
+    path('api/search/users/',UserSearchView.as_view(),name='user-search'),
 ]
