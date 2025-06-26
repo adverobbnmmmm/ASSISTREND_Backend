@@ -1,8 +1,12 @@
 import json
+from django.db.models import Q
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from .models import OneToOneMessage, GroupMessage, ChatGroup, UserAccount
+from .models import Friendship, OneToOneMessage, GroupMessage, ChatGroup, UserAccount
 
+# =====================
+# Friend Chat Consumer 
+# =====================
 # =====================
 # Friend Chat Consumer 
 # =====================
@@ -10,11 +14,11 @@ class FriendChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.user = self.scope["user"]
         self.friend_id = self.scope["url_route"]["kwargs"]["friend_id"]
-        #room_name created like this because, the receiver can connect to the same group.
+        # room_name created like this because the receiver can connect to the same group.
         self.room_name = f"private_chat_{min(self.user.id, self.friend_id)}_{max(self.user.id, self.friend_id)}"
         self.room_group_name = f"friend_{self.room_name}"
 
-        #adding group to redis.
+        # adding group to redis.
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
@@ -24,9 +28,17 @@ class FriendChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
 
-        #Handle acknowledgements
+        # Handle acknowledgements
         if data.get('type') == 'acknowledge':
             await self.handle_acknowledgement(data['message_id'])
+            return
+
+        # Before sending a message, ensure users are friends
+        is_friend = await self.check_friendship()
+        if not is_friend:
+            await self.send(text_data=json.dumps({
+                'error': 'You are not friends with this user. Message not sent.'
+            }))
             return
         
         message = data.get('message', '')
@@ -43,7 +55,7 @@ class FriendChatConsumer(AsyncWebsocketConsumer):
                 'message': message,
                 'image': image_url,
                 'sender_id': self.user.id,
-                'message_id':message_id
+                'message_id': message_id
             }
         )
 
@@ -52,9 +64,8 @@ class FriendChatConsumer(AsyncWebsocketConsumer):
             'message': event['message'],
             'image': event.get('image'),  # Include image data in the response
             'sender_id': event['sender_id'],
-            'message_id':event['message_id']
+            'message_id': event['message_id']
         }))
-
 
     @database_sync_to_async
     def save_message(self, message, image_url):
@@ -67,15 +78,26 @@ class FriendChatConsumer(AsyncWebsocketConsumer):
             image=image_url  # model's `image` field will accept image URL
         )
         return message_object.id
-    
+
     @database_sync_to_async
-    def handle_acknowledgement(self,message_id):
+    def handle_acknowledgement(self, message_id):
         try:
-            msg = OneToOneMessage.objects.get(id=message_id,receiver=self.user)
+            msg = OneToOneMessage.objects.get(id=message_id, receiver=self.user)
             msg.sent_to_receiver = True
             msg.save()
         except OneToOneMessage.DoesNotExist:
             pass
+
+    @database_sync_to_async
+    def check_friendship(self):
+        """
+        Checks if a Friendship exists between self.user and self.friend_id
+        in either direction (user1-user2 or user2-user1).
+        """
+        return Friendship.objects.filter(
+            Q(user1=self.user, user2_id=self.friend_id) |
+            Q(user1_id=self.friend_id, user2=self.user)
+        ).exists()
 
 
 # ========================
