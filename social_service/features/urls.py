@@ -8,4 +8,5 @@ urlpatterns = [
     path('update-name/', views.updateName, name='update_name'),
     path('update-socials/', views.updateSocials, name='update_socials'),
     path('update-interests/', views.updateInterests, name='update_interests'),
+    path('uploadPost/',views.uploadPost,name='uploadPost')
 ]

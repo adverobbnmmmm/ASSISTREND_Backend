@@ -142,3 +142,40 @@ def updateInterests(request):
     except UserAccount.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'User not found.'}, status=404)
     
+
+@api_view(['POST'])
+def uploadPost(request):
+    """
+    View to upload a post.
+    This function will handle the logic to upload a post to the Post model.
+    """
+    print(request.data)
+    userId = request.data.get('userId')
+    caption = request.data.get('caption')
+    imageUrl = request.data.get('imageUrl')  # Expecting an image URL
+    category=request.data.get('category')
+    try:
+        user = UserAccount.objects.get(id=userId)
+    except UserAccount.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found.'}, status=404)
+  
+    try:
+        categoryId=PostCategory.objects.get(name=category).id
+    except Category.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Category not found.'}, status=404)
+    
+    try:
+        post = Post.objects.create(
+            user=user,
+            caption=caption,
+            image_url=imageUrl,
+            category_id=categoryId
+        )
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+    return JsonResponse({'status': 'success', 'message': 'Post uploaded successfully.'})
+    
+    
+    
+    
