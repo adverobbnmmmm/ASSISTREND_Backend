@@ -1,10 +1,11 @@
 # social/views.py
 
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.core.cache import cache #for storig session token
-from .models import OneToOneMessage,GroupMessage,ChatGroup
+from .models import FriendRequest, Friendship, OneToOneMessage,GroupMessage,ChatGroup, UserAccount
 from django.db.models import Q
 import secrets
 import datetime
@@ -100,3 +101,78 @@ class GetMissedChats(APIView):#API endpoint for getting the chats sent to the us
             "group_messages": group_payload
         })
 
+
+# ================================
+# Send a Friend Request View
+# ================================
+class SendFriendRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        receiver_id = request.data.get('receiver_id')  # ID of user being sent request
+        message = request.data.get('message', '')      # Optional message to include
+
+        if receiver_id == request.user.id:
+            return Response({"error": "You cannot send a friend request to yourself."}, status=400)
+
+        receiver = get_object_or_404(UserAccount, id=receiver_id)
+
+        # Prevent duplicate requests
+        if FriendRequest.objects.filter(sender=request.user, receiver=receiver).exists():
+            return Response({"error": "Friend request already sent."}, status=400)
+
+        # Create the friend request
+        FriendRequest.objects.create(sender=request.user, receiver=receiver, message=message)
+
+        return Response({"message": "Friend request sent successfully."}, status=201)
+
+
+# ==================================
+# Accept or Reject a Friend Request
+# ==================================
+class RespondToFriendRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        request_id = request.data.get('request_id')
+        action = request.data.get('action')  # 'accept' or 'reject'
+
+        friend_request = get_object_or_404(FriendRequest, id=request_id, receiver=request.user)
+
+        if action == 'accept':
+            # Create the friendship
+            user1, user2 = sorted([friend_request.sender, friend_request.receiver], key=lambda u: u.id)
+            Friendship.objects.get_or_create(user1=user1, user2=user2)
+            friend_request.is_accepted = True
+            friend_request.save()
+            return Response({"message": "Friend request accepted."}, status=200)
+
+        elif action == 'reject':
+            friend_request.is_rejected = True
+            friend_request.save()
+            return Response({"message": "Friend request rejected."}, status=200)
+
+        else:
+            return Response({"error": "Invalid action."}, status=400)
+
+
+# ========================================
+# View Pending Friend Requests for a User
+# ========================================
+class PendingFriendRequests(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Get all incoming friend requests that are not yet accepted/rejected
+        pending = FriendRequest.objects.filter(receiver=request.user, is_accepted=False, is_rejected=False)
+        data = [
+            {
+                'id': fr.id,
+                'from': fr.sender.name,
+                'sender_id': fr.sender.id,
+                'message': fr.message,
+                'timestamp': fr.timestamp
+            }
+            for fr in pending
+        ]
+        return Response(data, status=200)

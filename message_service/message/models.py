@@ -36,6 +36,69 @@ class UserAccount(models.Model):
         managed = False  # Prevent Django from creating/modifying this table via migrations
 
 
+class FriendRequest(models.Model):
+    """
+    Represents a friend request sent from one user to another.
+    Once accepted, a corresponding Friendship object is created.
+    """
+
+    sender = models.ForeignKey(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name='sent_friend_requests'
+    )
+    receiver = models.ForeignKey(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name='received_friend_requests'
+    )
+    
+    # Optional message/note sent with the request
+    message = models.TextField(blank=True, null=True)
+
+    # Status flags for whether the request was accepted or rejected
+    is_accepted = models.BooleanField(default=False)
+    is_rejected = models.BooleanField(default=False)
+
+    # Timestamp to track when the request was sent
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Prevent duplicate friend requests from the same user to the same receiver
+        unique_together = ('sender', 'receiver')
+
+    def __str__(self):
+        return f"{self.sender.name} → {self.receiver.name} (accepted: {self.is_accepted})"
+
+
+class Friendship(models.Model):
+    """
+    Stores actual friendships.
+    Only one entry per friendship pair is maintained (A-B or B-A, not both).
+    """
+
+    user1 = models.ForeignKey(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name='friendship_user1'
+    )
+    user2 = models.ForeignKey(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name='friendship_user2'
+    )
+
+    # When this friendship was created
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Ensure no duplicate friendships between two users
+        unique_together = ('user1', 'user2')
+
+    def __str__(self):
+        return f"{self.user1.name} 🤝 {self.user2.name}"
+
+
 # ===========================
 # Abstract base message model
 # ===========================
