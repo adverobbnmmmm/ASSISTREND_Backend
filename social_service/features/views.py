@@ -1,8 +1,11 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+
+from .serializers import PostSerializer
 from .models import *  # Import all models from the same app
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
 # Create your views here.
 def getProfile(request):
     """
@@ -175,7 +178,26 @@ def uploadPost(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
     return JsonResponse({'status': 'success', 'message': 'Post uploaded successfully.'})
+
+def getPostById(request, username):
     
+    try:
+        userId=Profile.objects.get(userName=username).userId_id
+    except Profile.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found.'}, status=404)
+    
+    posts = list(Post.objects.filter(user=userId).values('id', 'caption', 'image_url', 'created_at'))
+    if not posts:
+        return JsonResponse({'status': 'error', 'message': 'Posts not found.'}, status=404)
+    
+    return JsonResponse({'status': 'success', 'message': 'Posts found.', 'posts': posts})
+
+
+@api_view(['GET'])
+def getPostUserFeed(request):
+    post=Post.objects.all().order_by('-created_at')
+    serializer=PostSerializer(post,many=True)
+    return Response(serializer.data)
     
     
     
