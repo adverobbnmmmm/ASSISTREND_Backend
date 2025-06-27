@@ -1,6 +1,6 @@
 # social/serializers.py
 from rest_framework import serializers
-from .models import Connect, Friend, Post, Engagement, Status
+from .models import Connect, Friend, Engagement, Status
 
 
 class ConnectSerializer(serializers.ModelSerializer):
@@ -13,10 +13,6 @@ class FriendSerializer(serializers.ModelSerializer):
         model = Friend
         fields = '__all__'
 
-class PostSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Post
-        fields = '__all__'
 
 class EngagementSerializer(serializers.ModelSerializer):
     class Meta:

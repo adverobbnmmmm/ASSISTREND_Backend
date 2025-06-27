@@ -1,7 +1,7 @@
 # social/views.py
 from rest_framework import viewsets
-from .models import Connect, Friend, Post, Engagement, Status
-from .serializers import ConnectSerializer, FriendSerializer, PostSerializer, EngagementSerializer, StatusSerializer
+from .models import Connect, Friend, Engagement, Status
+from .serializers import ConnectSerializer, FriendSerializer, EngagementSerializer, StatusSerializer
 
 
 class ConnectViewSet(viewsets.ModelViewSet):
@@ -12,9 +12,6 @@ class FriendViewSet(viewsets.ModelViewSet):
     queryset = Friend.objects.all()
     serializer_class = FriendSerializer
 
-class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
 
 class EngagementViewSet(viewsets.ModelViewSet):
     queryset = Engagement.objects.all()
