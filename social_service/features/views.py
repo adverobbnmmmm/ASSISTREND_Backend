@@ -1,8 +1,11 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+
+from .serializers import PostSerializer
 from .models import *  # Import all models from the same app
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
 # Create your views here.
 def getProfile(request):
     """
@@ -141,4 +144,60 @@ def updateInterests(request):
         return JsonResponse({'status': 'success', 'message': 'Interests updated successfully.'})
     except UserAccount.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'User not found.'}, status=404)
+    
+
+@api_view(['POST'])
+def uploadPost(request):
+    """
+    View to upload a post.
+    This function will handle the logic to upload a post to the Post model.
+    """
+    print(request.data)
+    userId = request.data.get('userId')
+    caption = request.data.get('caption')
+    imageUrl = request.data.get('imageUrl')  # Expecting an image URL
+    category=request.data.get('category')
+    try:
+        user = UserAccount.objects.get(id=userId)
+    except UserAccount.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found.'}, status=404)
+  
+    try:
+        categoryId=PostCategory.objects.get(name=category).id
+    except Category.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Category not found.'}, status=404)
+    
+    try:
+        post = Post.objects.create(
+            user=user,
+            caption=caption,
+            image_url=imageUrl,
+            category_id=categoryId
+        )
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+    return JsonResponse({'status': 'success', 'message': 'Post uploaded successfully.'})
+
+def getPostById(request, username):
+    
+    try:
+        userId=Profile.objects.get(userName=username).userId_id
+    except Profile.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found.'}, status=404)
+    
+    posts = list(Post.objects.filter(user=userId).values('id', 'caption', 'image_url', 'created_at'))
+    if not posts:
+        return JsonResponse({'status': 'error', 'message': 'Posts not found.'}, status=404)
+    
+    return JsonResponse({'status': 'success', 'message': 'Posts found.', 'posts': posts})
+
+
+@api_view(['GET'])
+def getPostUserFeed(request):
+    post=Post.objects.all().order_by('-created_at')
+    serializer=PostSerializer(post,many=True)
+    return Response(serializer.data)
+    
+    
     
