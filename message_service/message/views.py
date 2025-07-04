@@ -3,7 +3,7 @@
 from rest_framework.generics import ListAPIView
 from rest_framework import status
 from .serializers import UserAccountSerializer
-from .pagination import SearchScrollPagination
+from .pagination import UserScrollPagination
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,33 +11,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.cache import cache #for storig session token
 from .models import FriendRequest, Friendship, OneToOneMessage,GroupMessage,ChatGroup, UserAccount
 from django.db.models import Q
+from .serializers import FriendSerializer, GroupSerializer
 import secrets
 import datetime
 
-class RequestSocketSession(APIView):#API end-point for requesting a socket session.
-    permission_classes = [IsAuthenticated] #Ensures JWT is validated
-    
-    def post(self,request):
-        user = request.user # this now is the authenticated user.
-        chat_type = request.data.get('chat_type')
-        socket_session_token = secrets.token_urlsafe(32)# session token for url and user session authentication in socket connection.
-        cache.set(f"ws_session_{socket_session_token}",user.id,timeout=300)
-        #session token stored in cache expires after 5 mins, session can be made within 5 mins
-        target_id = request.data.get('target_id') #backend gets the which friend or group it refers to.
-        
-        if(chat_type=='friend'):
-            websocket_url = f"wss://127.0.0.1:8001/wss/friend/{target_id}?token={socket_session_token}"
-        if(chat_type=='group'):
-            websocket_url = f"wss://127.0.0.1:8001/wss/group/{target_id}?token={socket_session_token}"
-
-        #return the session info to the client
-        return Response({
-            "websocket_url": websocket_url,
-            "socket_session_token":socket_session_token,
-            "expires_in_seconds":300,
-            "message":("Use this url for opening a websocket connection")
-        })
-    
 
 class GetMissedChats(APIView):#API endpoint for getting the chats sent to the user while they were offline
     """
@@ -184,7 +161,7 @@ class PendingFriendRequests(APIView):
 class UserSearchView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserAccountSerializer
-    pagination_class = SearchScrollPagination  # only for this view
+    pagination_class = UserScrollPagination  # only for this view
 
     def get_queryset(self):
         query = self.request.GET.get('query', '').strip()
@@ -212,3 +189,38 @@ class UserSearchView(ListAPIView):
 
         # Should not reach here
         return Response({"detail": "Unexpected error."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Friendship, ChatGroup
+
+
+class AvailableChatsView(APIView):#Gives all of the chats the user can have.
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # All friendships involving this user
+        friendships = Friendship.objects.filter(
+            (Q(user1=user) | Q(user2=user))
+        )
+
+        # Extract unique friend users
+        friend_ids = set()
+        for f in friendships:
+            if f.user1_id == user.id:
+                friend_ids.add(f.user2_id)
+            else:
+                friend_ids.add(f.user1_id)
+
+        friends = list(UserAccount.objects.filter(id__in=friend_ids))
+
+        # All groups the user belongs to
+        groups = ChatGroup.objects.filter(members=user)
+
+        return Response({
+            "friends": FriendSerializer(friends, many=True).data,
+            "groups": GroupSerializer(groups, many=True).data
+        })

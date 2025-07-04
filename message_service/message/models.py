@@ -32,7 +32,7 @@ class UserAccount(models.Model):
     last_login_timestamp = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = 'accounts_useraccount'  # Link to the exact user table name from the accounts microservice
+        db_table = 'app_useraccount'  # Link to the exact user table name from the accounts microservice
         managed = False  # Prevent Django from creating/modifying this table via migrations
 
 

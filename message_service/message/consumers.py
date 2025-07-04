@@ -1,86 +1,156 @@
+# consumers.py
+
 import json
-from django.db.models import Q
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from .models import Friendship, OneToOneMessage, GroupMessage, ChatGroup, UserAccount
+from django.db.models import Q
+from .models import (
+    OneToOneMessage,
+    GroupMessage,
+    ChatGroup,
+    UserAccount,
+    Friendship
+)
 
-# =====================
-# Friend Chat Consumer 
-# =====================
-# =====================
-# Friend Chat Consumer 
-# =====================
-class FriendChatConsumer(AsyncWebsocketConsumer):
+# =======================================
+# NotificationsConsumer
+# =======================================
+# This single consumer handles:
+# - Receiving messages
+# - Storing them in DB
+# - Sending notifications to recipients
+# - Handling acknowledgements
+#
+# One connection per user.
+#
+class NotificationsConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        """
+        Called when WebSocket connection is established.
+        """
         self.user = self.scope["user"]
-        self.friend_id = self.scope["url_route"]["kwargs"]["friend_id"]
-        # room_name created like this because the receiver can connect to the same group.
-        self.room_name = f"private_chat_{min(self.user.id, self.friend_id)}_{max(self.user.id, self.friend_id)}"
-        self.room_group_name = f"friend_{self.room_name}"
+        self.room_group_name = f"user_notifications_{self.user.id}"
 
-        # adding group to redis.
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        # Add this connection to Redis group
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+
+        # Accept connection
         await self.accept()
 
+        # Optional: confirm connection to client
+        await self.send(text_data=json.dumps({
+            "type": "connection_established",
+            "message": "Notifications WebSocket connected successfully."
+        }))
+
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        """
+        Called when WebSocket connection closes.
+        """
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
 
     async def receive(self, text_data):
+        """
+        Handles incoming data from client.
+        """
         data = json.loads(text_data)
 
-        # Handle acknowledgements
-        if data.get('type') == 'acknowledge':
-            await self.handle_acknowledgement(data['message_id'])
-            return
+        if data["type"] == "chat_message":
+            # Incoming chat message
+            chat_type = data["chat_type"]
+            target_id = data["target_id"]
+            message = data.get("message", "")
+            image = data.get("image", None)
 
-        # Before sending a message, ensure users are friends
-        is_friend = await self.check_friendship()
+            if chat_type == "friend":
+                # Save and notify friend
+                await self.handle_friend_message(target_id, message, image)
+            elif chat_type == "group":
+                # Save and notify group
+                await self.handle_group_message(target_id, message, image)
+
+        elif data["type"] == "acknowledge":
+            # Acknowledgment of delivery
+            chat_type = data["chat_type"]
+            message_id = data["message_id"]
+
+            if chat_type == "friend":
+                await self.acknowledge_friend_message(message_id)
+            elif chat_type == "group":
+                await self.acknowledge_group_message(message_id)
+
+        else:
+            # Unknown message type
+            await self.send(text_data=json.dumps({
+                "error": "Invalid message type."
+            }))
+
+    # =======================
+    # Friend Message Handling
+    # =======================
+    async def handle_friend_message(self, friend_id, message, image):
+        """
+        Saves a one-to-one message and notifies recipient.
+        """
+        is_friend = await self.check_friendship(friend_id)
         if not is_friend:
             await self.send(text_data=json.dumps({
-                'error': 'You are not friends with this user. Message not sent.'
+                "error": "You are not friends with this user."
             }))
             return
-        
-        message = data.get('message', '')
-        image_url = data.get('image', None)  # base64 or direct image URL
 
-        # Save the message to DB
-        message_id = await self.save_message(message, image_url)
+        msg_id = await self.save_friend_message(friend_id, message, image)
 
-        # Send it to the other user
+        # Send notification to recipient
         await self.channel_layer.group_send(
-            self.room_group_name,
+            f"user_notifications_{friend_id}",
             {
-                'type': 'chat.message',
-                'message': message,
-                'image': image_url,
-                'sender_id': self.user.id,
-                'message_id': message_id
+                "type": "notify",
+                "event_type": "new_one_to_one_message",
+                "payload": {
+                    "id": msg_id,
+                    "sender_id": self.user.id,
+                    "message": message,
+                    "image": image,
+                }
             }
         )
 
-    async def chat_message(self, event):
-        await self.send(text_data=json.dumps({
-            'message': event['message'],
-            'image': event.get('image'),  # Include image data in the response
-            'sender_id': event['sender_id'],
-            'message_id': event['message_id']
-        }))
+    @database_sync_to_async
+    def check_friendship(self, friend_id):
+        """
+        Checks if the current user and friend_id are friends.
+        """
+        return Friendship.objects.filter(
+            Q(user1=self.user, user2_id=friend_id) |
+            Q(user1_id=friend_id, user2=self.user)
+        ).exists()
 
     @database_sync_to_async
-    def save_message(self, message, image_url):
-        friend = UserAccount.objects.get(id=self.friend_id)
-        # Store the message with optional image
-        message_object = OneToOneMessage.objects.create(
+    def save_friend_message(self, friend_id, message, image):
+        """
+        Saves OneToOneMessage to DB.
+        """
+        friend = UserAccount.objects.get(id=friend_id)
+        msg = OneToOneMessage.objects.create(
             sender=self.user,
             receiver=friend,
             message=message,
-            image=image_url  # model's `image` field will accept image URL
+            image=image
         )
-        return message_object.id
+        return msg.id
 
     @database_sync_to_async
-    def handle_acknowledgement(self, message_id):
+    def acknowledge_friend_message(self, message_id):
+        """
+        Marks OneToOneMessage as delivered.
+        """
         try:
             msg = OneToOneMessage.objects.get(id=message_id, receiver=self.user)
             msg.sent_to_receiver = True
@@ -88,106 +158,77 @@ class FriendChatConsumer(AsyncWebsocketConsumer):
         except OneToOneMessage.DoesNotExist:
             pass
 
-    @database_sync_to_async
-    def check_friendship(self):
+    # =======================
+    # Group Message Handling
+    # =======================
+    async def handle_group_message(self, group_id, message, image):
         """
-        Checks if a Friendship exists between self.user and self.friend_id
-        in either direction (user1-user2 or user2-user1).
+        Saves a group message and notifies group members.
         """
-        return Friendship.objects.filter(
-            Q(user1=self.user, user2_id=self.friend_id) |
-            Q(user1_id=self.friend_id, user2=self.user)
-        ).exists()
+        msg_id = await self.save_group_message(group_id, message, image)
+        group_members = await self.get_group_member_ids(group_id)
 
-
-# ========================
-# Group Chat WebSocket Consumer
-# ========================
-# Handles real-time messaging within a group chat.
-# Uses Redis via Django Channels for broadcasting messages to all online group members.
-class GroupChatConsumer(AsyncWebsocketConsumer):
-    
-    async def connect(self):
-        """
-        Called when a user establishes a WebSocket connection.
-        We extract the group ID from the URL and add the socket to the Redis group.
-        """
-        self.user = self.scope["user"]  # Set by our custom middleware
-        self.group_id = self.scope["url_route"]["kwargs"]["group_id"]
-        self.room_group_name = f"group_chat_{self.group_id}"  # Unique room name for Redis pub-sub group
-
-        # Add this connection to the Redis group
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-        await self.accept()
-
-    async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-
-    async def receive(self, text_data):
-        """
-        Called whenever a message is received from the WebSocket.
-        Parses the data, saves it to the database, and broadcasts it to the group.
-        """
-        data = json.loads(text_data)
-
-        #handle acknowledgement for a message
-        if data.get("type") == 'acknowledge':
-            await self.handle_acknowledgement(data['message_id'])
-            return
-        
-        message = data.get('message', '')
-        image_url = data.get('image', None)  # Optional image (URL or base64)
-
-        # Save the message to the database
-        message_id = await self.save_message(message, image_url)
-
-        # Broadcast message to the Redis group so all members get it
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'group.message',  # Handler to call: group_message()
-                'message': message,
-                'image': image_url,
-                'sender_id': self.user.id,
-                'message_id':message_id
-            }
-        )
-
-    async def group_message(self, event):
-        """
-        This gets called when the group_send message is received.
-        It sends the message back to the WebSocket client.
-        """
-        await self.send(text_data=json.dumps({
-            'message': event['message'],
-            'image': event.get('image'),
-            'sender_id': event['sender_id'],
-            'message_id': event['message_id']
-        }))
-
+        # Send notifications to all members except sender
+        for member_id in group_members:
+            if member_id != self.user.id:
+                await self.channel_layer.group_send(
+                    f"user_notifications_{member_id}",
+                    {
+                        "type": "notify",
+                        "event_type": "new_group_message",
+                        "payload": {
+                            "id": msg_id,
+                            "group_id": group_id,
+                            "sender_id": self.user.id,
+                            "message": message,
+                            "image": image,
+                        }
+                    }
+                )
 
     @database_sync_to_async
-    def save_message(self, message, image_url):
+    def save_group_message(self, group_id, message, image):
         """
-        Save the group message in the database, including the sender, group, message text, and image.
-        Also mark it as delivered to the sender (optional delivery tracking).
+        Saves GroupMessage to DB.
         """
-        group = ChatGroup.objects.get(id=self.group_id)
-        
-        # Save the message
+        group = ChatGroup.objects.get(id=group_id)
         msg = GroupMessage.objects.create(
             sender=self.user,
             group=group,
             message=message,
-            image=image_url  # Can be a URL or empty
+            image=image
         )
         return msg.id
-    
+
     @database_sync_to_async
-    def handle_acknowledgement(self,message_id):
+    def get_group_member_ids(self, group_id):
+        """
+        Returns list of user IDs in the group.
+        """
+        return list(
+            ChatGroup.objects.get(id=group_id).members.values_list("id", flat=True)
+        )
+
+    @database_sync_to_async
+    def acknowledge_group_message(self, message_id):
+        """
+        Marks GroupMessage as delivered to this user.
+        """
         try:
             msg = GroupMessage.objects.get(id=message_id)
             msg.delivered_to.add(self.user)
         except GroupMessage.DoesNotExist:
             pass
-    
+
+    # =======================
+    # Notifier
+    # =======================
+    async def notify(self, event):
+        """
+        Called automatically when group_send is triggered for this user's notifications group.
+        Pushes data to WebSocket.
+        """
+        await self.send(text_data=json.dumps({
+            "type": event["event_type"],
+            "payload": event["payload"]
+        }))
