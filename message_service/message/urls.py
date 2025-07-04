@@ -1,7 +1,6 @@
 from django.urls import path
 from .views import(
     AvailableChatsView,
-    RequestSocketSession,
     GetMissedChats,
     SendFriendRequest,
     RespondToFriendRequest,
@@ -10,7 +9,6 @@ from .views import(
 )
 
 urlpatterns = [
-    path('api/socket-session',RequestSocketSession.as_view(),name='request_socket_session'),
     path('api/missed-messages/', GetMissedChats.as_view(), name='missed-messages'),
     # Send a friend request to a user (POST)
     path('api/friends/request/', SendFriendRequest.as_view(), name='send_friend_request'),
