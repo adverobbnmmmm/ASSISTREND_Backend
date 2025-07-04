@@ -21,6 +21,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             )
         ]
     )
+    print('password successfull')
     privacy_policy_accepted = serializers.BooleanField(write_only=True)
 
     class Meta:

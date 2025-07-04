@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import(
+    AvailableChatsView,
     RequestSocketSession,
     GetMissedChats,
     SendFriendRequest,
@@ -18,4 +19,6 @@ urlpatterns = [
     # Get list of pending friend requests for the logged-in user (GET)
     path('api/friends/pending/', PendingFriendRequests.as_view(), name='pending_friend_requests'),
     path('api/search/users/',UserSearchView.as_view(),name='user-search'),
+    #Gives the friends and groups user have.
+    path("api/chats/available/", AvailableChatsView.as_view(), name="available-chats"),
 ]
