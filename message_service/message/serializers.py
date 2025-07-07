@@ -12,11 +12,18 @@ class UserAccountSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class FriendSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
+
     class Meta:
         model = UserAccount
-        fields = ["id", "username"]
+        fields = ["id", "name", "profile_picture"]
+
+    def get_profile_picture(self, obj):
+        if obj.profilepicture:
+            return obj.profilepicture.url
+        return ""
 
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatGroup
-        fields = ["id", "name"]
+        fields = ["id", "group_name"]
