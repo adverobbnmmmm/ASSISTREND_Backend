@@ -13,12 +13,15 @@ from .functions import get_user_details
 class ExternalJWTAuthentication(BaseAuthentication):#custom class for authenticating jwt
     def authenticate(self, request):
         auth_header = request.headers.get('Authorization')
+        print(auth_header)
         if not auth_header:
             return None #DRF will treat this as an anonyomus user.
         
         #1. Make sure prefix is bearer
         try:
             prefix,token = auth_header.split() #Bearer <token> format
+            print(prefix)
+            print(token)
             if prefix.lower()!='bearer':
                 raise AuthenticationFailed('Authorization header must start with Bearer')
             

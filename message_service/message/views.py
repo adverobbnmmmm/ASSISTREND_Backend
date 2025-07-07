@@ -190,35 +190,29 @@ class UserSearchView(ListAPIView):
         # Should not reach here
         return Response({"detail": "Unexpected error."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import Friendship, ChatGroup
 
-
-class AvailableChatsView(APIView):#Gives all of the chats the user can have.
+class AvailableChatsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
+        user_id = request.user.id  # extract the id manually
 
         # All friendships involving this user
         friendships = Friendship.objects.filter(
-            (Q(user1=user) | Q(user2=user))
+            Q(user1_id=user_id) | Q(user2_id=user_id)
         )
 
         # Extract unique friend users
         friend_ids = set()
         for f in friendships:
-            if f.user1_id == user.id:
+            if f.user1_id == user_id:
                 friend_ids.add(f.user2_id)
             else:
                 friend_ids.add(f.user1_id)
 
         friends = list(UserAccount.objects.filter(id__in=friend_ids))
 
-        # All groups the user belongs to
-        groups = ChatGroup.objects.filter(members=user)
+        groups = ChatGroup.objects.filter(members__id=user_id)
 
         return Response({
             "friends": FriendSerializer(friends, many=True).data,
