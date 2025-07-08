@@ -30,9 +30,10 @@ class GetMissedChats(APIView):#API endpoint for getting the chats sent to the us
         # 1. One-to-One Messages
         # =====================
         one_to_one_msgs = OneToOneMessage.objects.filter(
-            receiver=user,
+            receiver_id=user.id,
             sent_to_receiver=False
         )
+
 
         # Collect them for response
         one_to_one_payload = [{
@@ -40,8 +41,9 @@ class GetMissedChats(APIView):#API endpoint for getting the chats sent to the us
             "sender_id": msg.sender.id,
             "message": msg.message,
             "image": msg.image.url if msg.image else None,
-            "timestamp": msg.timestamp
+            "timestamp": msg.sent_time
         } for msg in one_to_one_msgs]
+
 
         # Mark these messages as delivered
         one_to_one_msgs.update(sent_to_receiver=True)
@@ -51,13 +53,13 @@ class GetMissedChats(APIView):#API endpoint for getting the chats sent to the us
         # 2. Group Messages
         # =====================
         # Get all groups this user belongs to
-        user_groups = ChatGroup.objects.filter(members=user)
+        user_groups = ChatGroup.objects.filter(members__id=user.id)
 
         # Find group messages the user hasn't acknowledged
         group_msgs = GroupMessage.objects.filter(
             group__in=user_groups
         ).exclude(
-            delivered_to=user
+            delivered_to__id=user.id
         )
 
         # Prepare response payload
@@ -67,8 +69,10 @@ class GetMissedChats(APIView):#API endpoint for getting the chats sent to the us
             "sender_id": msg.sender.id,
             "message": msg.message,
             "image": msg.image.url if msg.image else None,
-            "timestamp": msg.timestamp
+            "timestamp": msg.sent_time
         } for msg in group_msgs]
+
+
 
         # Mark them as delivered to this user
         for msg in group_msgs:
