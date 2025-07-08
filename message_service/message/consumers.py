@@ -41,6 +41,7 @@ class NotificationsConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
         # Optional: confirm connection to client
+        print('yeah')
         await self.send(text_data=json.dumps({
             "type": "connection_established",
             "message": "Notifications WebSocket connected successfully."

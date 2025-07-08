@@ -85,6 +85,7 @@ Start the background task worker:
 
 celery -A message_service worker --loglevel=info
 
+(works on cmd anyway)
 
 ---
 
