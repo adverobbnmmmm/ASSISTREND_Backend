@@ -24,24 +24,8 @@ class Friend(models.Model):
     class Meta:
         unique_together = [['user_id', 'friend_user_id']]
 
-class Post(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user_id = models.UUIDField() # Refers to user from accounts_service
-    privacy_setting = models.CharField(
-        max_length=15,
-        choices=[('public', 'Public'), ('private', 'Private'), ('friends_only', 'Friends Only')]
-    )
-    pic = models.ImageField(upload_to='post_images/', blank=True, null=True)
-    saved = models.BooleanField(default=False)
-    audio = models.FileField(upload_to='post_audio/', blank=True, null=True)
-    text = models.TextField(blank=True, null=True)
-    tag = models.CharField(max_length=255, blank=True, null=True)
-    queued = models.BooleanField(default=False)
-    timestamp = models.DateTimeField(auto_now_add=True)
-
 class Engagement(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
     user_id = models.UUIDField() # Refers to user from accounts_service
     type = models.CharField(
         max_length=10,

@@ -25,7 +25,11 @@ SECRET_KEY = 'django-insecure-z%ga6iyfh#5^p9-ziql-jo(8hg0%iln-_!(dd7o@u^2pv!e5l1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['10.0.2.2']
+
+
+
+ALLOWED_HOSTS = ['*']
+
 
 # Migration bypass has been removed after successful migrations
 # MIGRATION_MODULES = {
