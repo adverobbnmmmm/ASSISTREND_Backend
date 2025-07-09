@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'social',
     'features',
+    'django_elasticsearch_dsl',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +142,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Use the custom user model instead of Django's default
 # Removed custom user model setting since we're using a regular model
 # AUTH_USER_MODEL = 'features.UserAccount'
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': 'http://localhost:9200'
+    },
+}
