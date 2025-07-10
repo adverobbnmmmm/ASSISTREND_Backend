@@ -157,6 +157,7 @@ def uploadPost(request):
     userId = request.data.get('userId')
     caption = request.data.get('caption')
     imageUrl = request.data.get('imageUrl')  # Expecting an image URL
+    audioUrl = request.data.get('audioUrl') # Expecting an audio URL
     category=request.data.get('category')
     try:
         user = UserAccount.objects.get(id=userId)
@@ -165,7 +166,7 @@ def uploadPost(request):
   
     try:
         categoryId=PostCategory.objects.get(name=category).id
-    except Category.DoesNotExist:
+    except PostCategory.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Category not found.'}, status=404)
     
     try:
@@ -173,6 +174,7 @@ def uploadPost(request):
             user=user,
             caption=caption,
             image_url=imageUrl,
+            audio_url=audioUrl,
             category_id=categoryId
         )
     except Exception as e:
@@ -187,7 +189,7 @@ def getPostById(request, username):
     except Profile.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'User not found.'}, status=404)
     
-    posts = list(Post.objects.filter(user=userId).values('id', 'caption', 'image_url', 'created_at'))
+    posts = list(Post.objects.filter(user=userId).values('id', 'caption', 'image_url', 'audio_url', 'created_at'))
     if not posts:
         return JsonResponse({'status': 'error', 'message': 'Posts not found.'}, status=404)
     
