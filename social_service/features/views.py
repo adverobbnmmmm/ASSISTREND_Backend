@@ -6,6 +6,7 @@ from .models import *  # Import all models from the same app
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from .documents import UserDocument, PostDocument
 # Create your views here.
 def getProfile(request):
     """
@@ -196,10 +197,43 @@ def getPostById(request, username):
 
 
 @api_view(['GET'])
-def getPostUserFeed(request):
+def getPostUserFeed(request):   
     post=Post.objects.all().order_by('-created_at')
-    serializer=PostSerializer(post,many=True)
+    serializer=PostSerializer(post,many=True,context={'user_id': request.GET.get('userId')})
     return Response(serializer.data)
-    
-    
-    
+
+@api_view(['GET'])
+def search_users(request):
+    query = request.GET.get('q', '')
+
+    search = UserDocument.search()
+    # Autocomplete suggestion
+    suggest = search.suggest(
+        'user_suggest',
+        query,  
+        completion={
+            'field': 'name.suggest',
+            'fuzzy': {
+                'fuzziness': 2
+            }
+        }
+    )
+    # Fuzzy + autocomplete match
+    results = search.query(
+        "multi_match",
+        query=query,
+        fields=['name', 'email'],
+        fuzziness="auto",
+        type="bool_prefix"
+    )
+    users = [{'id': hit.id, 'name': hit.name, 'email': hit.email} for hit in results]
+    # Get autocomplete suggestions
+    suggestions = []
+    if hasattr(suggest, 'to_dict'):
+        suggest_dict = suggest.to_dict()
+        for option in suggest_dict.get('user_suggest', [{}])[0].get('options', []):
+            suggestions.append(option.get('text'))
+    return Response({'results': users, 'suggestions': suggestions})
+
+
+
