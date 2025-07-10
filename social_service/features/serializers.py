@@ -8,7 +8,8 @@ class PostSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Post
-        fields = ['id', 'user', 'username', 'caption', 'image_url', 'category', 'created_at', 'likes_count', 'is_liked']
+
+        fields = ['id', 'user', 'username', 'caption', 'image_url', 'audio_url','category', 'created_at', 'likes_count', 'is_liked']
 
     def get_likes_count(self, obj):
         return PostLike.objects.filter(post=obj).count()
@@ -19,3 +20,4 @@ class PostSerializer(serializers.ModelSerializer):
         if not user_id:
             return False
         return PostLike.objects.filter(post=obj, user_id=user_id).exists()
+

@@ -114,6 +114,7 @@ class Post(models.Model):
     user = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
     caption = models.TextField(blank=True)
     image_url = models.URLField()
+    audio_url = models.URLField(blank=True)
     category = models.ForeignKey(PostCategory, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
