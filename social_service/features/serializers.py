@@ -36,25 +36,52 @@ class ProfileSetupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['userName', 'emoji', 'about', 'location', 'dob', 'gender', 'profileImageUrl', 'audioUrl', 'interests']
+        extra_kwargs = {
+            'userName': {'required': True},  # Explicitly make userName required
+            'emoji': {'required': False},
+            'about': {'required': False},
+            'location': {'required': False},
+            'dob': {'required': False},
+            'gender': {'required': False},
+            'profileImageUrl': {'required': False},
+            'audioUrl': {'required': False},
+        }
         
     def create(self, validated_data):
+        print(f'DEBUG: ProfileSetupSerializer.create called with: {validated_data}')
+        
         interests_data = validated_data.pop('interests', [])
         user = self.context['user']  # Get user from context
         
+        print(f'DEBUG: User from context: {user.email}')
+        print(f'DEBUG: Interests data: {interests_data}')
+        print(f'DEBUG: Validated data after popping interests: {validated_data}')
+        
         # Create profile
-        profile = Profile.objects.create(userId=user, **validated_data)
+        try:
+            profile = Profile.objects.create(userId=user, **validated_data)
+            print(f'DEBUG: Profile created successfully with ID: {profile.id}')
+        except Exception as e:
+            print(f'DEBUG: Error creating profile: {str(e)}')
+            raise
         
         # Handle interests
         if interests_data:
+            print(f'DEBUG: Processing {len(interests_data)} interests')
             for interest_name in interests_data:
+                print(f'DEBUG: Processing interest: {interest_name}')
                 interest, created = Interest.objects.get_or_create(
                     interestName=interest_name
                 )
-                UserInterest.objects.create(
+                print(f'DEBUG: Interest {"created" if created else "found"}: {interest.interestName}')
+                
+                user_interest = UserInterest.objects.create(
                     userId=user,
                     interestId=interest
                 )
+                print(f'DEBUG: UserInterest created: {user_interest.id}')
         
+        print(f'DEBUG: Profile setup completed for user: {user.email}')
         return profile
 
 
