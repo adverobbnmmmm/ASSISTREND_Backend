@@ -58,7 +58,8 @@ class Profile(models.Model):
     location = models.CharField(max_length=255, blank=True, null=True)  
     dob= models.DateField(blank=True, null=True)
     gender= models.CharField(max_length=20, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], blank=True, null=True)
-
+    audioUrl = models.URLField(blank=True, null=True)
+    
     class Meta:
         managed = False  # Tell Django not to manage this table
         db_table = 'app_profile'  # Specify the exact table name in the database
