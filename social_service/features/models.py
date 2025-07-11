@@ -42,10 +42,12 @@ class UserInterest(models.Model):
 class Interest(models.Model):
     interestName=models.CharField(max_length=255, blank=False, null=False)
     
-    
     class Meta:
         managed = False
         db_table = 'app_interest'  # Specify the exact table name in the database
+        
+    def __str__(self):
+        return self.interestName
         
 class Profile(models.Model):
     userId= models.OneToOneField(UserAccount, on_delete=models.CASCADE, related_name='profile')
@@ -63,6 +65,9 @@ class Profile(models.Model):
     class Meta:
         managed = False  # Tell Django not to manage this table
         db_table = 'app_profile'  # Specify the exact table name in the database
+    
+    def __str__(self):
+        return f"{self.userName} - {self.userId.email}"
     
    
 class HighlightQuestion(models.Model):

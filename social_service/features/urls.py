@@ -18,4 +18,9 @@ urlpatterns = [
     path('removeLike/', likeViews.removeLike, name='remove_like'),
     path('getComment/', commentViews.getComment, name='get_comment'),
     path('addComment/', commentViews.addComment, name='add_comment'),
+    # Profile setup endpoints
+    path('setup-profile/', views.setupProfile, name='setup_profile'),
+    path('get-interests/', views.getInterests, name='get_interests'),
+    path('check-profile/', views.checkProfileExists, name='check_profile'),
+    path('user-profile/', views.getUserProfile, name='user_profile'),
 ]

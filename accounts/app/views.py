@@ -31,6 +31,7 @@ class RegisterView(views.APIView):
             cache.set(f"otp_{validated_data["phone"]}", otp, timeout=300)
             cache.set(f"user_data_{validated_data['email']}", validated_data, timeout=300)
             return Response({"message": "Check your email or phone for OTP."}, status=status.HTTP_201_CREATED)
+        print("#################serializer.errors",serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class OTPVerifyView(views.APIView):
