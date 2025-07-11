@@ -84,7 +84,7 @@ class Profile(models.Model):
     location = models.CharField(max_length=255, blank=True, null=True)  
     dob= models.DateField(blank=True, null=True)
     gender= models.CharField(max_length=20, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], blank=True, null=True)
-
+    audioUrl = models.URLField(blank=True, null=True)  # URL to the audio file
 
 
 
