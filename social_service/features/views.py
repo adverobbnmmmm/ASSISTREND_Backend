@@ -1,11 +1,12 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 
-from .serializers import PostSerializer
+from .serializers import PostSerializer, ProfileSetupSerializer, InterestSerializer, ProfileSerializer
 from .models import *  # Import all models from the same app
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import status
 from .documents import UserDocument, PostDocument
 # Create your views here.
 def getProfile(request):
@@ -241,6 +242,86 @@ def search_users(request):
         for option in suggest_dict.get('user_suggest', [{}])[0].get('options', []):
             suggestions.append(option.get('text'))
     return Response({'results': users, 'suggestions': suggestions})
+
+
+@api_view(['POST'])
+def setupProfile(request):
+    """
+    View to setup user profile after OTP verification.
+    This function will handle the logic to create a profile for the user.
+    """
+    try:
+        user_id = request.data.get('userId')
+        if not user_id:
+            return Response({'status': 'error', 'message': 'User ID is required.'}, status=400)
+        
+        user = UserAccount.objects.get(id=user_id)
+        
+        # Check if profile already exists
+        if Profile.objects.filter(userId=user).exists():
+            return Response({'status': 'error', 'message': 'Profile already exists.'}, status=400)
+        
+        serializer = ProfileSetupSerializer(data=request.data, context={'user': user})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'status': 'success', 'message': 'Profile setup completed successfully.'})
+        else:
+            return Response({'status': 'error', 'message': 'Invalid data', 'errors': serializer.errors}, status=400)
+    
+    except UserAccount.DoesNotExist:
+        return Response({'status': 'error', 'message': 'User not found.'}, status=404)
+    except Exception as e:
+        return Response({'status': 'error', 'message': str(e)}, status=500)
+
+
+@api_view(['GET'])
+def getInterests(request):
+    """
+    View to get all available interests.
+    This function will return all interests that users can select from.
+    """
+    interests = Interest.objects.all()
+    serializer = InterestSerializer(interests, many=True)
+    return Response({'status': 'success', 'interests': serializer.data})
+
+
+@api_view(['GET'])
+def checkProfileExists(request):
+    """
+    View to check if a user's profile exists.
+    This function will check if the user has completed profile setup.
+    """
+    user_id = request.GET.get('userId')
+    if not user_id:
+        return Response({'status': 'error', 'message': 'User ID is required.'}, status=400)
+    
+    try:
+        user = UserAccount.objects.get(id=user_id)
+        profile_exists = Profile.objects.filter(userId=user).exists()
+        return Response({'status': 'success', 'profileExists': profile_exists})
+    except UserAccount.DoesNotExist:
+        return Response({'status': 'error', 'message': 'User not found.'}, status=404)
+
+
+@api_view(['GET'])
+def getUserProfile(request):
+    """
+    View to get user profile data.
+    This function will return the user's profile information.
+    """
+    user_id = request.GET.get('userId')
+    if not user_id:
+        return Response({'status': 'error', 'message': 'User ID is required.'}, status=400)
+    
+    try:
+        user = UserAccount.objects.get(id=user_id)
+        profile = Profile.objects.get(userId=user)
+        serializer = ProfileSerializer(profile)
+        return Response({'status': 'success', 'profile': serializer.data})
+    except UserAccount.DoesNotExist:
+        return Response({'status': 'error', 'message': 'User not found.'}, status=404)
+    except Profile.DoesNotExist:
+        return Response({'status': 'error', 'message': 'Profile not found.'}, status=404)
 
 
 
