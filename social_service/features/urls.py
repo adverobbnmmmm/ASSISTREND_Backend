@@ -16,6 +16,6 @@ urlpatterns = [
     path('search/posts/', searchViews.search_posts_by_caption, name='search_posts_by_caption'),
     path('addLike/', likeViews.addLike, name='add_like'),
     path('removeLike/', likeViews.removeLike, name='remove_like'),
-    path('getComment',commentViews.getComment, name='get_comment'),
-    path('addComment',commentViews.addComment, name='add_comment'),
+    path('getComment/', commentViews.getComment, name='get_comment'),
+    path('addComment/', commentViews.addComment, name='add_comment'),
 ]

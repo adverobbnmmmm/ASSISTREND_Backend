@@ -159,6 +159,8 @@ def uploadPost(request):
     imageUrl = request.data.get('imageUrl')  # Expecting an image URL
     audioUrl = request.data.get('audioUrl') # Expecting an audio URL
     category=request.data.get('category')
+    taggedUsers=request.data.get('taggedUserIds', [])  # Expecting a list of tagged user IDs
+    # print(f"Tagged Users: {taggedUsers}")
     try:
         user = UserAccount.objects.get(id=userId)
     except UserAccount.DoesNotExist:
@@ -168,7 +170,7 @@ def uploadPost(request):
         categoryId=PostCategory.objects.get(name=category).id
     except PostCategory.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Category not found.'}, status=404)
-    
+  
     try:
         post = Post.objects.create(
             user=user,
@@ -179,7 +181,12 @@ def uploadPost(request):
         )
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    
+    try:
+        for taggedUserId in taggedUsers:
+            tagged_user = UserAccount.objects.get(id=taggedUserId)
+            TaggedPerson.objects.create(user=tagged_user, post=post)
+    except UserAccount.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Tagged user not found.'}, status=404)
     return JsonResponse({'status': 'success', 'message': 'Post uploaded successfully.'})
 
 def getPostById(request, username):

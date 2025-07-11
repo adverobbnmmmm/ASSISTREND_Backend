@@ -1,15 +1,16 @@
 from rest_framework import serializers
-from .models import Post, PostLike
+from .models import Post, PostLike, PostComment
 
 class PostSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.name', read_only=True)
     likes_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Post
 
-        fields = ['id', 'user', 'username', 'caption', 'image_url', 'audio_url', 'category', 'created_at', 'likes_count', 'is_liked']
+        fields = ['id', 'user', 'username', 'caption', 'image_url', 'audio_url', 'category', 'created_at', 'likes_count', 'is_liked', 'comments_count']
 
     def get_likes_count(self, obj):
         return PostLike.objects.filter(post=obj).count()
@@ -20,4 +21,7 @@ class PostSerializer(serializers.ModelSerializer):
         if not user_id:
             return False
         return PostLike.objects.filter(post=obj, user_id=user_id).exists()
+
+    def get_comments_count(self, obj):
+        return PostComment.objects.filter(post=obj).count()
 
