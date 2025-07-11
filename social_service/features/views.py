@@ -245,32 +245,47 @@ def search_users(request):
 
 
 @api_view(['POST'])
+@api_view(['POST'])
 def setupProfile(request):
     """
     View to setup user profile after OTP verification.
     This function will handle the logic to create a profile for the user.
     """
+    print(f'DEBUG: setupProfile called with data: {request.data}')
+    
     try:
         user_id = request.data.get('userId')
+        print(f'DEBUG: Extracted userId: {user_id}')
+        
         if not user_id:
+            print('DEBUG: No userId provided')
             return Response({'status': 'error', 'message': 'User ID is required.'}, status=400)
         
         user = UserAccount.objects.get(id=user_id)
+        print(f'DEBUG: Found user: {user.email}')
         
         # Check if profile already exists
         if Profile.objects.filter(userId=user).exists():
+            print('DEBUG: Profile already exists')
             return Response({'status': 'error', 'message': 'Profile already exists.'}, status=400)
         
+        print('DEBUG: Creating serializer with context')
         serializer = ProfileSetupSerializer(data=request.data, context={'user': user})
+        
         if serializer.is_valid():
-            serializer.save()
+            print('DEBUG: Serializer is valid, saving profile')
+            profile = serializer.save()
+            print(f'DEBUG: Profile saved successfully: {profile.id}')
             return Response({'status': 'success', 'message': 'Profile setup completed successfully.'})
         else:
+            print(f'DEBUG: Serializer errors: {serializer.errors}')
             return Response({'status': 'error', 'message': 'Invalid data', 'errors': serializer.errors}, status=400)
     
     except UserAccount.DoesNotExist:
+        print(f'DEBUG: UserAccount with id {user_id} not found')
         return Response({'status': 'error', 'message': 'User not found.'}, status=404)
     except Exception as e:
+        print(f'DEBUG: Exception in setupProfile: {str(e)}')
         return Response({'status': 'error', 'message': str(e)}, status=500)
 
 
@@ -292,14 +307,24 @@ def checkProfileExists(request):
     This function will check if the user has completed profile setup.
     """
     user_id = request.GET.get('userId')
+    print(f'DEBUG: checkProfileExists called with userId: {user_id}')
+    
     if not user_id:
+        print('DEBUG: No userId provided')
         return Response({'status': 'error', 'message': 'User ID is required.'}, status=400)
     
     try:
+        # Get the UserAccount object first
         user = UserAccount.objects.get(id=user_id)
+        print(f'DEBUG: Found user: {user.email}')
+        
+        # Check if a Profile exists for this UserAccount
         profile_exists = Profile.objects.filter(userId=user).exists()
+        print(f'DEBUG: Profile exists: {profile_exists}')
+        
         return Response({'status': 'success', 'profileExists': profile_exists})
     except UserAccount.DoesNotExist:
+        print(f'DEBUG: UserAccount with id {user_id} not found')
         return Response({'status': 'error', 'message': 'User not found.'}, status=404)
 
 
@@ -322,6 +347,40 @@ def getUserProfile(request):
         return Response({'status': 'error', 'message': 'User not found.'}, status=404)
     except Profile.DoesNotExist:
         return Response({'status': 'error', 'message': 'Profile not found.'}, status=404)
+
+@api_view(['GET'])
+def testDatabase(request):
+    """
+    Test endpoint to check database connectivity and table structure
+    """
+    try:
+        # Test UserAccount table
+        user_count = UserAccount.objects.count()
+        print(f'DEBUG: UserAccount table has {user_count} records')
+        
+        # Test Profile table
+        profile_count = Profile.objects.count()
+        print(f'DEBUG: Profile table has {profile_count} records')
+        
+        # Test Interest table
+        interest_count = Interest.objects.count()
+        print(f'DEBUG: Interest table has {interest_count} records')
+        
+        return Response({
+            'status': 'success',
+            'message': 'Database connection successful',
+            'counts': {
+                'users': user_count,
+                'profiles': profile_count,
+                'interests': interest_count
+            }
+        })
+    except Exception as e:
+        print(f'DEBUG: Database test error: {str(e)}')
+        return Response({
+            'status': 'error',
+            'message': f'Database error: {str(e)}'
+        }, status=500)
 
 
 

@@ -23,4 +23,5 @@ urlpatterns = [
     path('get-interests/', views.getInterests, name='get_interests'),
     path('check-profile/', views.checkProfileExists, name='check_profile'),
     path('user-profile/', views.getUserProfile, name='user_profile'),
+    path('test-database/', views.testDatabase, name='test_database'),  # Add test endpoint
 ]
