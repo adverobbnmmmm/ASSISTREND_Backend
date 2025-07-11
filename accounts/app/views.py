@@ -64,7 +64,13 @@ class OTPVerifyView(views.APIView):
                 user.set_password(cached_user_data['password'])
                 user.privacy_policy_accepted = cached_user_data['privacy_policy_accepted']
                 user.save()
-                return Response({"message": "OTP verified!,Account creation successful"}, status=status.HTTP_200_OK)
+                
+                refresh = RefreshToken.for_user(user)
+                return Response({'refresh': str(refresh), 'access': str(refresh.access_token),
+                        'userId': user.id}, status=status.HTTP_200_OK)
+                
+                # Note: This code is unreachable
+                # return Response({"message": "OTP verified!,Account creation successful"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(views.APIView):
