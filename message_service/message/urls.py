@@ -5,7 +5,8 @@ from .views import(
     SendFriendRequest,
     RespondToFriendRequest,
     PendingFriendRequests,
-    UserSearchView
+    UserSearchView,
+    FullChatHistoryView  
 )
 
 urlpatterns = [
@@ -19,4 +20,6 @@ urlpatterns = [
     path('api/search/users/',UserSearchView.as_view(),name='user-search'),
     #Gives the friends and groups user have.
     path("api/chats/available/", AvailableChatsView.as_view(), name="available-chats"),
+    #gives complete chat history between 2 users or in a group available in db.
+    path('api/messages/history/', FullChatHistoryView.as_view(), name='chat_history'),
 ]

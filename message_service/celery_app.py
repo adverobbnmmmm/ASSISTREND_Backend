@@ -16,7 +16,7 @@ app.conf.beat_schedule = {
 
     'cleanup_group_messages_every_hour': {
         'task': 'message.tasks.cleanup_group_messages',  # Fully qualified task name
-        'schedule': crontab(minute='*/60'),  # Run every 1 minute
+        'schedule': crontab(minute='*/60'),  # Run every 1 hour
     },
 }
 
