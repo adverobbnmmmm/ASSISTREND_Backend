@@ -222,3 +222,79 @@ class AvailableChatsView(APIView):
             "friends": FriendSerializer(friends, many=True).data,
             "groups": GroupSerializer(groups, many=True).data
         })
+    
+    
+class FullChatHistoryView(APIView):
+    """
+    API view to fetch the full chat history:
+    - Between two users (one-to-one chat), OR
+    - From a group (group chat)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Get query parameters from the request
+        sender_id = request.query_params.get('sender_id')
+        receiver_id = request.query_params.get('receiver_id')
+        group_id = request.query_params.get('group_id')
+
+        # ============================
+        # Case 1: One-to-One Messages
+        # ============================
+        if sender_id and receiver_id:
+            # Fetch messages where sender & receiver match in either direction
+            # This ensures we get both sent and received messages in the conversation
+            messages = OneToOneMessage.objects.filter(
+                Q(sender_id=sender_id, receiver_id=receiver_id) |
+                Q(sender_id=receiver_id, receiver_id=sender_id)
+            ).order_by('sent_time')  # Sort chronologically
+
+            # Serialize messages to dictionary format
+            data = [{
+                "id": msg.id,
+                "sender_id": msg.sender.id,
+                "receiver_id": msg.receiver.id,
+                "message": msg.message,
+                "image": msg.image.url if msg.image else None,
+                "timestamp": msg.sent_time
+            } for msg in messages]
+
+            # Return a structured JSON response
+            return Response({
+                "type": "one_to_one",
+                "messages": data
+            }, status=200)
+
+        # ========================
+        # Case 2: Group Messages
+        # ========================
+        elif group_id:
+            # Fetch messages sent in the given group
+            messages = GroupMessage.objects.filter(
+                group_id=group_id
+            ).order_by('sent_time')  # Sort chronologically
+
+            # Serialize messages
+            data = [{
+                "id": msg.id,
+                "group_id": msg.group.id,
+                "sender_id": msg.sender.id,
+                "message": msg.message,
+                "image": msg.image.url if msg.image else None,
+                "timestamp": msg.sent_time
+            } for msg in messages]
+
+            # Return group chat history
+            return Response({
+                "type": "group",
+                "messages": data
+            }, status=200)
+
+        # =====================
+        # Invalid Query Case
+        # =====================
+        else:
+            # If neither one-to-one nor group info is provided, return an error
+            return Response({
+                "error": "Please provide either sender_id and receiver_id OR group_id."
+            }, status=400)
