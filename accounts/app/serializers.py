@@ -98,40 +98,75 @@ class ProfileSetupSerializer(serializers.ModelSerializer):
         }
         
     def create(self, validated_data):
-        print(f'DEBUG: ProfileSetupSerializer.create called with: {validated_data}')
+        print(f'DEBUG SERIALIZER: ProfileSetupSerializer.create called')
+        print(f'DEBUG SERIALIZER: Validated data received: {validated_data}')
+        print(f'DEBUG SERIALIZER: Context: {self.context}')
         
         interests_data = validated_data.pop('interests', [])
         user = self.context['user']  # Get user from context
         
-        print(f'DEBUG: User from context: {user.email}')
-        print(f'DEBUG: Interests data: {interests_data}')
-        print(f'DEBUG: Validated data after popping interests: {validated_data}')
+        print(f'DEBUG SERIALIZER: User from context: {user.email} (id: {user.id})')
+        print(f'DEBUG SERIALIZER: Interests data: {interests_data}')
+        print(f'DEBUG SERIALIZER: Validated data after popping interests: {validated_data}')
+        
+        # Ensure all nullable fields have default values to avoid NULL constraint violations
+        profile_data = {
+            'userId': user,
+            'userName': validated_data.get('userName', ''),
+            'emoji': validated_data.get('emoji', ''),
+            'about': validated_data.get('about', ''),
+            'points': validated_data.get('points', 0),
+            'isPrivate': validated_data.get('isPrivate', False),
+            'profileImageUrl': validated_data.get('profileImageUrl', ''),
+            'location': validated_data.get('location', ''),
+            'dob': validated_data.get('dob', None),
+            'gender': validated_data.get('gender', ''),
+            'audioUrl': validated_data.get('audioUrl', ''),  # Ensure this is never None
+        }
+        
+        print(f'DEBUG SERIALIZER: Final profile data with defaults: {profile_data}')
         
         # Create profile
         try:
-            profile = Profile.objects.create(userId=user, **validated_data)
-            print(f'DEBUG: Profile created successfully with ID: {profile.id}')
+            print(f'DEBUG SERIALIZER: About to create Profile with data: {profile_data}')
+            
+            profile = Profile.objects.create(**profile_data)
+            print(f'DEBUG SERIALIZER: Profile created successfully')
+            print(f'DEBUG SERIALIZER: Profile ID: {profile.id}')
+            print(f'DEBUG SERIALIZER: Profile userName: {profile.userName}')
+            print(f'DEBUG SERIALIZER: Profile userId: {profile.userId}')
+            print(f'DEBUG SERIALIZER: Profile userId.id: {profile.userId.id}')
+            print(f'DEBUG SERIALIZER: Profile audioUrl: {profile.audioUrl}')
+            
         except Exception as e:
-            print(f'DEBUG: Error creating profile: {str(e)}')
+            print(f'DEBUG SERIALIZER: Error creating profile: {str(e)}')
+            print(f'DEBUG SERIALIZER: Error type: {type(e)}')
+            import traceback
+            print(f'DEBUG SERIALIZER: Full traceback: {traceback.format_exc()}')
             raise
         
         # Handle interests
         if interests_data:
-            print(f'DEBUG: Processing {len(interests_data)} interests')
-            for interest_name in interests_data:
-                print(f'DEBUG: Processing interest: {interest_name}')
-                interest, created = Interest.objects.get_or_create(
-                    interestName=interest_name
-                )
-                print(f'DEBUG: Interest {"created" if created else "found"}: {interest.interestName}')
-                
-                user_interest = UserInterest.objects.create(
-                    userId=user,
-                    interestId=interest
-                )
-                print(f'DEBUG: UserInterest created: {user_interest.id}')
+            print(f'DEBUG SERIALIZER: Processing {len(interests_data)} interests')
+            try:
+                for interest_name in interests_data:
+                    print(f'DEBUG SERIALIZER: Processing interest: {interest_name}')
+                    interest, created = Interest.objects.get_or_create(
+                        interestName=interest_name
+                    )
+                    print(f'DEBUG SERIALIZER: Interest {"created" if created else "found"}: {interest.interestName} (id: {interest.id})')
+                    
+                    user_interest = UserInterest.objects.create(
+                        userId=user,
+                        interestId=interest
+                    )
+                    print(f'DEBUG SERIALIZER: UserInterest created with id: {user_interest.id}')
+            except Exception as e:
+                print(f'DEBUG SERIALIZER: Error processing interests: {str(e)}')
+                # Don't raise here, as the profile was already created successfully
         
-        print(f'DEBUG: Profile setup completed for user: {user.email}')
+        print(f'DEBUG SERIALIZER: Profile setup completed for user: {user.email}')
+        print(f'DEBUG SERIALIZER: Returning profile with id: {profile.id}')
         return profile
 
 # Interest Serializer
