@@ -116,42 +116,78 @@ def setupProfile(request):
     View to setup user profile after OTP verification.
     This function will handle the logic to create a profile for the user.
     """
-    print(f'DEBUG: setupProfile called with data: {request.data}')
+    print(f'DEBUG ACCOUNTS: setupProfile called')
+    print(f'DEBUG ACCOUNTS: Request method: {request.method}')
+    print(f'DEBUG ACCOUNTS: Request data type: {type(request.data)}')
+    print(f'DEBUG ACCOUNTS: Request data: {request.data}')
+    print(f'DEBUG ACCOUNTS: Request headers: {dict(request.headers)}')
     
     try:
         user_id = request.data.get('userId')
-        print(f'DEBUG: Extracted userId: {user_id}')
+        print(f'DEBUG ACCOUNTS: Extracted userId: {user_id} (type: {type(user_id)})')
         
         if not user_id:
-            print('DEBUG: No userId provided')
+            print('DEBUG ACCOUNTS: No userId provided')
             return Response({'status': 'error', 'message': 'User ID is required.'}, status=400)
         
+        # Convert user_id to int if it's a string
+        try:
+            user_id = int(user_id)
+            print(f'DEBUG ACCOUNTS: Converted userId to int: {user_id}')
+        except (ValueError, TypeError):
+            print(f'DEBUG ACCOUNTS: Could not convert userId to int: {user_id}')
+            return Response({'status': 'error', 'message': 'Invalid User ID format.'}, status=400)
+        
+        print(f'DEBUG ACCOUNTS: Looking for UserAccount with id: {user_id}')
         user = UserAccount.objects.get(id=user_id)
-        print(f'DEBUG: Found user: {user.email}')
+        print(f'DEBUG ACCOUNTS: Found user: {user.email} (id: {user.id})')
         
         # Check if profile already exists
-        if Profile.objects.filter(userId=user).exists():
-            print('DEBUG: Profile already exists')
+        existing_profile = Profile.objects.filter(userId=user).first()
+        if existing_profile:
+            print(f'DEBUG ACCOUNTS: Profile already exists with id: {existing_profile.id}')
             return Response({'status': 'error', 'message': 'Profile already exists.'}, status=400)
+        else:
+            print('DEBUG ACCOUNTS: No existing profile found - proceeding with creation')
         
-        print('DEBUG: Creating serializer with context')
+        print('DEBUG ACCOUNTS: Creating serializer with context')
         serializer = ProfileSetupSerializer(data=request.data, context={'user': user})
         
+        print(f'DEBUG ACCOUNTS: Serializer created, validating...')
         if serializer.is_valid():
-            print('DEBUG: Serializer is valid, saving profile')
-            profile = serializer.save()
-            print(f'DEBUG: Profile saved successfully: {profile.id}')
-            return Response({'status': 'success', 'message': 'Profile setup completed successfully.'})
+            print('DEBUG ACCOUNTS: Serializer is valid, calling save()...')
+            try:
+                profile = serializer.save()
+                print(f'DEBUG ACCOUNTS: Profile saved successfully with id: {profile.id}')
+                print(f'DEBUG ACCOUNTS: Profile userName: {profile.userName}')
+                print(f'DEBUG ACCOUNTS: Profile userId: {profile.userId.id}')
+                
+                # Verify the profile was actually saved
+                verification_profile = Profile.objects.filter(id=profile.id).first()
+                if verification_profile:
+                    print(f'DEBUG ACCOUNTS: Verification successful - profile exists in database')
+                else:
+                    print(f'DEBUG ACCOUNTS: WARNING - Profile not found in database after save!')
+                
+                return Response({'status': 'success', 'message': 'Profile setup completed successfully.', 'profileId': profile.id})
+            except Exception as save_error:
+                print(f'DEBUG ACCOUNTS: Error during save: {str(save_error)}')
+                print(f'DEBUG ACCOUNTS: Save error type: {type(save_error)}')
+                return Response({'status': 'error', 'message': f'Error saving profile: {str(save_error)}'}, status=500)
         else:
-            print(f'DEBUG: Serializer errors: {serializer.errors}')
+            print(f'DEBUG ACCOUNTS: Serializer validation failed')
+            print(f'DEBUG ACCOUNTS: Serializer errors: {serializer.errors}')
             return Response({'status': 'error', 'message': 'Invalid data', 'errors': serializer.errors}, status=400)
     
     except UserAccount.DoesNotExist:
-        print(f'DEBUG: UserAccount with id {user_id} not found')
+        print(f'DEBUG ACCOUNTS: UserAccount with id {user_id} not found')
         return Response({'status': 'error', 'message': 'User not found.'}, status=404)
     except Exception as e:
-        print(f'DEBUG: Exception in setupProfile: {str(e)}')
-        return Response({'status': 'error', 'message': str(e)}, status=500)
+        print(f'DEBUG ACCOUNTS: Unexpected exception in setupProfile: {str(e)}')
+        print(f'DEBUG ACCOUNTS: Exception type: {type(e)}')
+        import traceback
+        print(f'DEBUG ACCOUNTS: Full traceback: {traceback.format_exc()}')
+        return Response({'status': 'error', 'message': f'Unexpected error: {str(e)}'}, status=500)
 
 @api_view(['GET'])
 def getInterests(request):
@@ -170,25 +206,46 @@ def checkProfileExists(request):
     This function will check if the user has completed profile setup.
     """
     user_id = request.GET.get('userId')
-    print(f'DEBUG: checkProfileExists called with userId: {user_id}')
+    print(f'DEBUG ACCOUNTS: checkProfileExists called with userId: {user_id}')
     
     if not user_id:
-        print('DEBUG: No userId provided')
+        print('DEBUG ACCOUNTS: No userId provided')
         return Response({'status': 'error', 'message': 'User ID is required.'}, status=400)
     
     try:
+        # Convert user_id to int if it's a string
+        try:
+            user_id = int(user_id)
+            print(f'DEBUG ACCOUNTS: Converted userId to int: {user_id}')
+        except (ValueError, TypeError):
+            print(f'DEBUG ACCOUNTS: Could not convert userId to int: {user_id}')
+            return Response({'status': 'error', 'message': 'Invalid User ID format.'}, status=400)
+        
         # Get the UserAccount object first
         user = UserAccount.objects.get(id=user_id)
-        print(f'DEBUG: Found user: {user.email}')
+        print(f'DEBUG ACCOUNTS: Found user: {user.email} (id: {user.id})')
         
         # Check if a Profile exists for this UserAccount
-        profile_exists = Profile.objects.filter(userId=user).exists()
-        print(f'DEBUG: Profile exists: {profile_exists}')
+        profiles = Profile.objects.filter(userId=user)
+        profile_count = profiles.count()
+        profile_exists = profile_count > 0
+        
+        print(f'DEBUG ACCOUNTS: Profile query result: {profile_count} profiles found')
+        print(f'DEBUG ACCOUNTS: Profile exists: {profile_exists}')
+        
+        if profile_exists:
+            profile = profiles.first()
+            print(f'DEBUG ACCOUNTS: Found profile with id: {profile.id}, userName: {profile.userName}')
         
         return Response({'status': 'success', 'profileExists': profile_exists})
     except UserAccount.DoesNotExist:
-        print(f'DEBUG: UserAccount with id {user_id} not found')
+        print(f'DEBUG ACCOUNTS: UserAccount with id {user_id} not found')
         return Response({'status': 'error', 'message': 'User not found.'}, status=404)
+    except Exception as e:
+        print(f'DEBUG ACCOUNTS: Exception in checkProfileExists: {str(e)}')
+        import traceback
+        print(f'DEBUG ACCOUNTS: Full traceback: {traceback.format_exc()}')
+        return Response({'status': 'error', 'message': str(e)}, status=500)
 
 @api_view(['GET'])
 def getUserProfile(request):
@@ -216,17 +273,49 @@ def testDatabase(request):
     Test endpoint to check database connectivity and table structure
     """
     try:
+        print('DEBUG ACCOUNTS: Testing database connectivity...')
+        
         # Test UserAccount table
         user_count = UserAccount.objects.count()
-        print(f'DEBUG: UserAccount table has {user_count} records')
+        print(f'DEBUG ACCOUNTS: UserAccount table has {user_count} records')
+        
+        # Show a sample user if exists
+        if user_count > 0:
+            sample_user = UserAccount.objects.first()
+            print(f'DEBUG ACCOUNTS: Sample user: {sample_user.email} (id: {sample_user.id})')
         
         # Test Profile table
         profile_count = Profile.objects.count()
-        print(f'DEBUG: Profile table has {profile_count} records')
+        print(f'DEBUG ACCOUNTS: Profile table has {profile_count} records')
+        
+        # Show sample profiles if exist
+        if profile_count > 0:
+            profiles = Profile.objects.all()[:3]  # Show first 3 profiles
+            for profile in profiles:
+                print(f'DEBUG ACCOUNTS: Profile id: {profile.id}, userName: {profile.userName}, userId: {profile.userId.id}')
         
         # Test Interest table
         interest_count = Interest.objects.count()
-        print(f'DEBUG: Interest table has {interest_count} records')
+        print(f'DEBUG ACCOUNTS: Interest table has {interest_count} records')
+        
+        # Test UserInterest table
+        user_interest_count = UserInterest.objects.count()
+        print(f'DEBUG ACCOUNTS: UserInterest table has {user_interest_count} records')
+        
+        # Try to create a test interest to verify write permissions
+        try:
+            test_interest, created = Interest.objects.get_or_create(
+                interestName='Test Interest for Database Check'
+            )
+            if created:
+                print(f'DEBUG ACCOUNTS: Successfully created test interest with id: {test_interest.id}')
+                # Clean up the test interest
+                test_interest.delete()
+                print(f'DEBUG ACCOUNTS: Successfully deleted test interest')
+            else:
+                print(f'DEBUG ACCOUNTS: Test interest already existed with id: {test_interest.id}')
+        except Exception as e:
+            print(f'DEBUG ACCOUNTS: Error testing interest creation: {str(e)}')
         
         return Response({
             'status': 'success',
@@ -234,11 +323,14 @@ def testDatabase(request):
             'counts': {
                 'users': user_count,
                 'profiles': profile_count,
-                'interests': interest_count
+                'interests': interest_count,
+                'user_interests': user_interest_count
             }
         })
     except Exception as e:
-        print(f'DEBUG: Database test error: {str(e)}')
+        print(f'DEBUG ACCOUNTS: Database test error: {str(e)}')
+        import traceback
+        print(f'DEBUG ACCOUNTS: Full traceback: {traceback.format_exc()}')
         return Response({
             'status': 'error',
             'message': f'Database error: {str(e)}'
