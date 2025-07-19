@@ -1,4 +1,21 @@
-# requirements.txt
+asgiref==3.8.1
+certifi==2025.6.15
+charset-normalizer==3.4.2
 Django==5.1.6
-djangorestframework
-requests
+django-elasticsearch-dsl==8.2
+djangorestframework==3.16.0
+elastic-transport==8.17.1
+elasticsearch==8.18.1
+elasticsearch-dsl==8.18.0
+idna==3.10
+pillow==11.2.1
+psycopg2-binary==2.9.10
+python-dateutil==2.9.0.post0
+python-decouple==3.8
+requests==2.32.4
+six==1.17.0
+sqlparse==0.5.3
+typing_extensions==4.14.1
+tzdata==2025.2
+urllib3==2.4.0
+gunicorn
