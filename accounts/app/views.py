@@ -15,6 +15,8 @@ from .serializers import (
 from .utils import generateOtp, sendOtpEmail,sendOtpSMS
 from django.core.cache import cache
 from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework import permissions
 
 class RegisterView(views.APIView):
     permission_classes = [permissions.AllowAny]
@@ -336,3 +338,12 @@ def testDatabase(request):
             'message': f'Database error: {str(e)}'
         }, status=500)
 
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def checkServerStatus(request):
+    """
+    Endpoint to check if the server is running.
+    """
+    return Response({'status': 'Server is running'}, status=status.HTTP_200_OK)
