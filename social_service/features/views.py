@@ -382,5 +382,11 @@ def testDatabase(request):
             'message': f'Database error: {str(e)}'
         }, status=500)
 
+@api_view(['GET'])
+def checkServerStatus(request):
+    """
+    Endpoint to check if the server is running and responding.
+    """
+    return Response({'status': 'success', 'message': 'Server is running.'})
 
 
