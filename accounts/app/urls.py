@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    RegisterView, OTPVerifyView, LoginView, LogoutView, UserProfileView,
+    RegisterView, OTPVerifyView, LoginView, LogoutView, UserProfileView,getAnyUserProfile,
     setupProfile, getInterests, checkProfileExists, getUserProfile, testDatabase,checkServerStatus,getName
 )
 
@@ -19,4 +19,5 @@ urlpatterns = [
     path('test-database/', testDatabase, name='test_database'),
     path('checkServerStatus/',checkServerStatus,name='check_server_status'),
     path('getName/', getName, name='get_name'),
+    path('getAnyUserProfile/', getAnyUserProfile, name='get_any_user_profile'),
 ]

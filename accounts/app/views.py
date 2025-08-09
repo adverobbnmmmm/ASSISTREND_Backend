@@ -363,3 +363,24 @@ def getName(request):
         return Response({'status': 'success', 'name': user.name}, status=status.HTTP_200_OK)
     except UserAccount.DoesNotExist:
         return Response({'status': 'error', 'message': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def getAnyUserProfile(request):
+    """
+    Endpoint to get the profile of any user by userId.
+    """
+    userId = request.GET.get('userId')
+    
+    if not userId:
+        return Response({'status': 'error', 'message': 'User ID is required.'}, status=400)
+    try:
+        user = UserAccount.objects.get(id=userId)
+        profile = Profile.objects.get(userId=user)
+        serializer = ProfileSerializer(profile)
+        return Response({'status': 'success', 'profile': serializer.data}, status=status.HTTP_200_OK)
+    except UserAccount.DoesNotExist:
+        return Response({'status': 'error', 'message': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+    except Profile.DoesNotExist:
+        return Response({'status': 'error', 'message': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+    
