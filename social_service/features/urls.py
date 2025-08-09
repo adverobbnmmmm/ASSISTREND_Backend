@@ -28,4 +28,6 @@ urlpatterns = [
     path('user-profile/', views.getUserProfile, name='user_profile'),
     path('test-database/', views.testDatabase, name='test_database'),  # Add test endpoint
     path('checkServerStatus/', views.checkServerStatus, name='check_server_status'),  # New endpoint to check server status
+    path('update-profile-audio/', views.updateProfileAudio, name='update_profile_audio'),  # Profile audio endpoint
+    path('update-profile-image/', views.updateProfilePhoto, name='update_profile_image'),  # Profile image endpoint
 ]
