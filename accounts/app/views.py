@@ -347,3 +347,19 @@ def checkServerStatus(request):
     Endpoint to check if the server is running.
     """
     return Response({'status': 'Server is running'}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def getName(request):
+    """
+    Endpoint to get the username of the authenticated user.
+    """
+    
+    userId= request.GET.get('userId')
+    if not userId:
+        return Response({'status': 'error', 'message': 'User ID is required.'}, status=400)
+    try:
+        user = UserAccount.objects.get(id=userId)
+        return Response({'status': 'success', 'name': user.name}, status=status.HTTP_200_OK)
+    except UserAccount.DoesNotExist:
+        return Response({'status': 'error', 'message': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
