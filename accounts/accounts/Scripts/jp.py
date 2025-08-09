@@ -1,4 +1,4 @@
-#!C:\Users\ASUS\Desktop\VS code\Work\assistrend\ASSISTREND_Backend\accounts\accounts\Scripts\python.exe
+#!C:\Users\ASUS\Desktop\VS code\Work\assistrend\AssistrendBackend\accounts\accounts\Scripts\python.exe
 
 import sys
 import json

@@ -25,11 +25,15 @@ def getProfile(request):
         emoji = profile.emoji
         about = profile.about
         points = profile.points
+        audioUrl = profile.audioUrl
+        profileImageUrl = profile.profileImageUrl
     except Profile.DoesNotExist:
         username = ""
         emoji = ""
         about = ""
         points = 0
+        audioUrl = None
+        profileImageUrl = None
         
     badges = list(UserBadge.objects.filter(user=user).values('badge__name', 'badge__image'))
     posts = list(Post.objects.filter(user=user).values('id', 'caption', 'image_url', 'created_at'))
@@ -51,7 +55,9 @@ def getProfile(request):
         'stories': stories,
         'likedPosts': liked_posts,
         'taggedPosts': tagged_posts,
-        'socials': socials
+        'socials': socials,
+        'audioUrl': audioUrl,
+        'profileImageUrl': profileImageUrl
     })
     
 @api_view(['POST'])
@@ -389,4 +395,40 @@ def checkServerStatus(request):
     """
     return Response({'status': 'success', 'message': 'Server is running.'})
 
+
+@api_view(['POST'])
+def updateProfileAudio(request):
+    """
+    View to update the profile audio URL of a user.
+    This function will handle the logic to update the 'audioUrl' field in the Profile model.
+    """
+    userId = request.data.get('userId')
+    audioUrl = request.data.get('audioUrl')
+    
+    try:
+        user = UserAccount.objects.get(id=userId)
+        profile, created = Profile.objects.get_or_create(userId=user)
+        profile.audioUrl = audioUrl
+        profile.save()
+        return JsonResponse({'status': 'success', 'message': 'Profile audio updated successfully.'})
+    except UserAccount.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found.'}, status=404)
+
+
+def updateProfilePhoto(request):
+    """
+    View to update the profile image URL of a user.
+    This function will handle the logic to update the 'profileImageUrl' field in the Profile model.
+    """
+    userId = request.data.get('userId')
+    profileImageUrl = request.data.get('profileImageUrl')
+    
+    try:
+        user = UserAccount.objects.get(id=userId)
+        profile, created = Profile.objects.get_or_create(userId=user)
+        profile.profileImageUrl = profileImageUrl
+        profile.save()
+        return JsonResponse({'status': 'success', 'message': 'Profile image updated successfully.'})
+    except UserAccount.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'User not found.'}, status=404)
 
