@@ -6,11 +6,11 @@ class PostSerializer(serializers.ModelSerializer):
     likes_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
-    
+    posterProfileImageUrl = serializers.CharField(source='user.profile.profileImageUrl', read_only=True)
+
     class Meta:
         model = Post
-
-        fields = ['id', 'user', 'username', 'caption', 'image_url', 'audio_url', 'category', 'created_at', 'likes_count', 'is_liked', 'comments_count']
+        fields = ['id', 'user', 'username', 'caption', 'image_url', 'audio_url', 'category', 'created_at', 'likes_count', 'is_liked', 'comments_count', 'posterProfileImageUrl']
 
     def get_likes_count(self, obj):
         return PostLike.objects.filter(post=obj).count()
