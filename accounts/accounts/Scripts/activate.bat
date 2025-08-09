@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\ASUS\Desktop\VS code\Work\assistrend\ASSISTREND_Backend\accounts\accounts
+set VIRTUAL_ENV=C:\Users\ASUS\Desktop\VS code\Work\assistrend\AssistrendBackend\accounts\accounts
 
 if not defined PROMPT set PROMPT=$P$G
 

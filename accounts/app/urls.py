@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
-    RegisterView, OTPVerifyView, LoginView, LogoutView, UserProfileView,
-    setupProfile, getInterests, checkProfileExists, getUserProfile, testDatabase,checkServerStatus
+    RegisterView, OTPVerifyView, LoginView, LogoutView, UserProfileView,getAnyUserProfile,
+    setupProfile, getInterests, checkProfileExists, getUserProfile, testDatabase,checkServerStatus,getName
 )
 
 urlpatterns = [
@@ -17,5 +17,7 @@ urlpatterns = [
     path('check-profile/', checkProfileExists, name='check_profile'),
     path('user-profile-detail/', getUserProfile, name='user_profile_detail'),
     path('test-database/', testDatabase, name='test_database'),
-    path('checkServerStatus/',checkServerStatus,name='check_server_status')
+    path('checkServerStatus/',checkServerStatus,name='check_server_status'),
+    path('getName/', getName, name='get_name'),
+    path('getAnyUserProfile/', getAnyUserProfile, name='get_any_user_profile'),
 ]
