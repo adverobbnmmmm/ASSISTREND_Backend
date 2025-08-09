@@ -26,21 +26,22 @@ SECRET_KEY = 'django-insecure-kfs7j=fgch^=!bmdfk!63nr9t@hqyb6ej$isn-f+6^mzwu+bj9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost','127.0.0.1','10.0.2.2']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
+    'rest_framework',
+    'message',
+    'daphne', #Daphne ASI server for handling WebSockets
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    'rest_framework',
-    'message',
 ]
 
 MIDDLEWARE = [
@@ -72,6 +73,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'message_service.wsgi.application'
+ASGI_APPLICATION = 'message_service.asgi.application'
 
 
 # Database
@@ -108,6 +110,13 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'message.auth.ExternalJWTAuthentication', 
+    ],
+}
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -129,3 +138,21 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+SECRET_KEY = config('SECRET_KEY')
+ALGORITHM = config('ALGORITHM')
+
+CHANNEL_LAYERS = {
+    "default":{
+        "BACKEND":"channels_redis.core.RedisChannelLayer",
+        "CONFIG":{
+            "hosts":[("127.0.0.1",6379)],
+        },
+    },
+}
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
