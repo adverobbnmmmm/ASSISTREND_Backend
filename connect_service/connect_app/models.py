@@ -1,4 +1,4 @@
-#Django shared tables from accounts service
+# connect_app/models.py
 from django.db import models
 
 class UserAccount(models.Model):
@@ -21,24 +21,43 @@ class UserAccount(models.Model):
     last_updated_timestamp = models.DateTimeField(auto_now=True)
     last_login_timestamp = models.DateTimeField(blank=True, null=True)
     password = models.CharField(max_length=128)
+
     class Meta:
-        managed = False  # Tell Django not to manage this table
-        db_table = 'app_useraccount'  # Specify the exact table name in the database
+        managed = True
+
     def __str__(self):
         return self.email
 
-class UserInterest(models.Model):
-    userId = models.ForeignKey(UserAccount, on_delete=models.CASCADE)
-    interestId =  models.ForeignKey('Interest', on_delete=models.CASCADE)
-    class Meta:
-        managed=False
-        db_table="app_userinterest"
 
 class Interest(models.Model):
-    interestName=models.CharField(max_length=255, blank=False, null=False)
+    # kept your field name interestName to be compatible with existing DB
+    interestName = models.CharField(max_length=255, blank=False, null=False)
     class Meta:
-        managed=False
-        db_table="app_interest"
+        managed = True
     def __str__(self):
         return self.interestName
-        
+
+
+class UserInterest(models.Model):
+    # permanent user profile interests (existing)
+    userId = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name='userinterests')
+    interestId = models.ForeignKey(Interest, on_delete=models.CASCADE, related_name='userinterests')
+    class Meta:
+        managed = True
+        unique_together = ('userId', 'interestId')
+
+
+class InstantInterest(models.Model):
+    """
+    Temporary instant interests for connect feature.
+    Each row = one (user, interest) selection made for the current instant/connect session.
+    These are read by other users for matching. They are intended to be short-lived.
+    """
+    user = models.ForeignKey(UserAccount, on_delete=models.CASCADE, related_name='instant_interests')
+    interest = models.ForeignKey(Interest, on_delete=models.CASCADE, related_name='instant_users')
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        managed = True
+        unique_together = ('user', 'interest')
+    def __str__(self):
+        return f"{self.user.email} - {self.interest.interestName}"
