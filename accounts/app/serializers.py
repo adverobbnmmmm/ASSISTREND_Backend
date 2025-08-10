@@ -146,22 +146,13 @@ class ProfileSetupSerializer(serializers.ModelSerializer):
             print(f'DEBUG SERIALIZER: Full traceback: {traceback.format_exc()}')
             raise
         
-        # Handle interests
+        # Handle interests - store as comma-separated string in user field
         if interests_data:
             print(f'DEBUG SERIALIZER: Processing {len(interests_data)} interests')
             try:
-                for interest_name in interests_data:
-                    print(f'DEBUG SERIALIZER: Processing interest: {interest_name}')
-                    interest, created = Interest.objects.get_or_create(
-                        interestName=interest_name
-                    )
-                    print(f'DEBUG SERIALIZER: Interest {"created" if created else "found"}: {interest.interestName} (id: {interest.id})')
-                    
-                    user_interest = UserInterest.objects.create(
-                        userId=user,
-                        interestId=interest
-                    )
-                    print(f'DEBUG SERIALIZER: UserInterest created with id: {user_interest.id}')
+                user.interest = ','.join(interests_data)
+                user.save()
+                print(f'DEBUG SERIALIZER: Updated user interests: {user.interest}')
             except Exception as e:
                 print(f'DEBUG SERIALIZER: Error processing interests: {str(e)}')
                 # Don't raise here, as the profile was already created successfully
