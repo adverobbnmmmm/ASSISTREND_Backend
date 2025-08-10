@@ -41,14 +41,18 @@ def getProfile(request):
     liked_posts = list(PostLike.objects.filter(user=user).values('post_id'))
     tagged_posts = list(TaggedPerson.objects.filter(user=user).values('post_id')) 
     socials = list(SocialLink.objects.filter(user=user).values('platform', 'url'))
-    interests = list(UserInterest.objects.filter(userId=user).select_related('interestId').values('interestId__interestName'))
+    
+    # Get interests from the user's interest field (comma-separated string)
+    user_interests = []
+    if user.interest:
+        user_interests = [{'interestName': interest.strip()} for interest in user.interest.split(',') if interest.strip()]
     
     return JsonResponse({
         'name': name,
         'username': username,
         'emoji': emoji,
         'about': about,
-        'interests': interests,
+        'interests': user_interests,
         'badges': badges,
         'points': points,
         'posts': posts,
@@ -136,22 +140,57 @@ def updateSocials(request):
 def updateInterests(request):
     """
     View to update the interests of a user.
-    This function will handle the logic to update the interests in the UserInterest model.
+    This function will store interests as comma-separated values in the user's interest field.
     """
+    print(f"DEBUG updateInterests: Request data type: {type(request.data)}")
+    print(f"DEBUG updateInterests: Request data: {request.data}")
+    
     userId = request.data.get('userId')
-    interestNames = request.data.getlist('interests')  # Expecting a list of interest names
+    
+    # Handle both JSON and form data
+    if hasattr(request.data, 'getlist'):
+        # Form data (QueryDict)
+        interestNames = request.data.getlist('interests')
+        print(f"DEBUG updateInterests: Using getlist() - interests: {interestNames}")
+    else:
+        # JSON data (dict)
+        interestNames = request.data.get('interests', [])
+        # Ensure it's a list
+        if not isinstance(interestNames, list):
+            interestNames = [interestNames] if interestNames else []
+        print(f"DEBUG updateInterests: Using get() - interests: {interestNames}")
+    
+    print(f"DEBUG updateInterests: userId={userId}, interestNames={interestNames}")
     
     try:
         user = UserAccount.objects.get(id=userId)
-        UserInterest.objects.filter(userId=user).delete()  # Clear existing interests
         
-        for interestName in interestNames:
-            interest, created = Interest.objects.get_or_create(interestName=interestName)
-            UserInterest.objects.create(userId=user, interestId=interest)
+        # Store interests as comma-separated string in the user's interest field
+        if interestNames and len(interestNames) > 0:
+            # Filter out empty strings and strip whitespace
+            cleaned_interests = [interest.strip() for interest in interestNames if interest and interest.strip()]
+            user.interest = ','.join(cleaned_interests)
+            print(f"DEBUG updateInterests: Stored interests: '{user.interest}'")
+        else:
+            user.interest = ''
+            print(f"DEBUG updateInterests: Cleared interests (empty list)")
+            
+        user.save()
+        print(f"DEBUG updateInterests: User saved successfully")
         
-        return JsonResponse({'status': 'success', 'message': 'Interests updated successfully.'})
+        return JsonResponse({
+            'status': 'success', 
+            'message': 'Interests updated successfully.',
+            'interests': interestNames
+        })
     except UserAccount.DoesNotExist:
+        print(f"DEBUG updateInterests: User not found with id: {userId}")
         return JsonResponse({'status': 'error', 'message': 'User not found.'}, status=404)
+    except Exception as e:
+        print(f"DEBUG updateInterests: Exception occurred: {type(e).__name__}: {str(e)}")
+        import traceback
+        print(f"DEBUG updateInterests: Full traceback: {traceback.format_exc()}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
 
 @api_view(['POST'])
@@ -299,11 +338,20 @@ def setupProfile(request):
 def getInterests(request):
     """
     View to get all available interests.
-    This function will return all interests that users can select from.
+    Since interests are hardcoded in frontend, this returns the standard list.
     """
-    interests = Interest.objects.all()
-    serializer = InterestSerializer(interests, many=True)
-    return Response({'status': 'success', 'interests': serializer.data})
+    # Standard 30 interests that match the frontend
+    interests = [
+        {'id': i+1, 'interestName': interest} for i, interest in enumerate([
+            'Technology', 'Sports', 'Music', 'Movies', 'Books',
+            'Travel', 'Food', 'Art', 'Photography', 'Gaming',
+            'Fitness', 'Fashion', 'Science', 'Nature', 'Dancing',
+            'Cooking', 'Writing', 'Languages', 'Business', 'Health',
+            'Education', 'Entertainment', 'DIY', 'Gardening', 'Pets',
+            'Finance', 'Yoga', 'Meditation', 'Environment', 'Volunteering'
+        ])
+    ]
+    return Response({'status': 'success', 'interests': interests})
 
 
 @api_view(['GET'])
