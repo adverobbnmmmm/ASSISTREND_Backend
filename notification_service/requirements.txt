@@ -1,0 +1,4 @@
+# requirements.txt
+Django==5.1.6
+djangorestframework
+requests
